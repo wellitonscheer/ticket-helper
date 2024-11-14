@@ -2,6 +2,8 @@ from transformers import (
     PreTrainedModel,
     GPT2LMHeadModel,
     GPT2Tokenizer,
+    BertTokenizer,
+    BertForQuestionAnswering
 )
 
 
@@ -32,7 +34,7 @@ def generate_text(sequence: str) -> str:
         encoding["input_ids"],
         attention_mask=encoding["attention_mask"],
         do_sample=True,
-        max_new_tokens=64,
+        max_new_tokens=128,
         eos_token_id=model.config.eos_token_id,
         early_stopping=True,
         pad_token_id=model.config.eos_token_id,
@@ -48,8 +50,12 @@ def generate_text(sequence: str) -> str:
 
 
 def main():
-    sequence = "who is the president of the united states?"
+    sequence = '''Olá, tudo bem? 
+Preciso de ajuda para baixar/encontrar o logos no IOS, não estou encontrado!
+
+Atenciosamente:. '''
     result = generate_text(sequence)
+    print("result aaaaaaaaaaaaaaaaaaaaaaaaa\n")
     print(result)
 
 

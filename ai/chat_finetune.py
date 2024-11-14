@@ -1,15 +1,14 @@
-from typing import List
-from datasets import Dataset
+from typing import List, Dict
+from datasets import Dataset, DatasetDict
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from transformers import Trainer, TrainingArguments
 import nltk
 from nltk.tokenize import sent_tokenize
+import numpy as np
+import torch
 
 
-nltk.download("punkt_tab")
 nltk.download("punkt")
-nltk.download("wordnet")
-nltk.download("omw")
 
 
 def load_and_split_sentences(train_file_path: str) -> List[str]:
@@ -26,10 +25,10 @@ def train(
     per_device_train_batch_size: int,
     num_train_epochs: float,
 ):
-    # tokenizer = GPT2Tokenizer.from_pretrained("Locutusque/gpt2-conversational-or-qa")
-    # model = GPT2LMHeadModel.from_pretrained("Locutusque/gpt2-conversational-or-qa")
-    tokenizer = GPT2Tokenizer.from_pretrained("openai-community/gpt2-medium")
-    model = GPT2LMHeadModel.from_pretrained("openai-community/gpt2-medium")
+    # tokenizer = GPT2Tokenizer.from_pretrained("openai-community/gpt2-medium")
+    # model = GPT2LMHeadModel.from_pretrained("openai-community/gpt2-medium")
+    tokenizer = GPT2Tokenizer.from_pretrained("Locutusque/gpt2-conversational-or-qa")
+    model = GPT2LMHeadModel.from_pretrained("Locutusque/gpt2-conversational-or-qa")
     model.to("cuda")
 
     if tokenizer.pad_token is None:
@@ -51,27 +50,47 @@ def train(
     sentences = load_and_split_sentences(train_file_path)
     data_dict = {"text": sentences}
     dataset = Dataset.from_dict(data_dict)
-    tokenized_dataset = dataset.map(tokenize_sentences, batched=True)
 
+    # Split into training and validation sets
+    dataset = dataset.train_test_split(test_size=0.1)
+    tokenized_datasets = dataset.map(tokenize_sentences, batched=True)
+
+    # Define the training arguments with early stopping enabled
     training_args = TrainingArguments(
         output_dir=output_dir,
         overwrite_output_dir=True,
         per_device_train_batch_size=per_device_train_batch_size,
-        learning_rate=1e-4,
-        weight_decay=0.01,
+        learning_rate=1e-5,
+        weight_decay=0.1,
         num_train_epochs=num_train_epochs,
-        save_total_limit=2
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        load_best_model_at_end=True,  # Loads the best model at the end based on validation loss
+        metric_for_best_model="eval_loss",  # Use validation loss as the metric for early stopping
+        greater_is_better=False,  # We want the loss to decrease
     )
+
+    # Define a function to compute metrics
+    def compute_metrics(eval_pred):
+        logits, labels = eval_pred
+        predictions = np.argmax(logits, axis=-1)
+        # Calculate loss only where labels are not -100 (ignored tokens)
+        loss_fct = torch.nn.CrossEntropyLoss(ignore_index=-100)
+        loss = loss_fct(
+            torch.tensor(logits, dtype=torch.float32), 
+            torch.tensor(labels, dtype=torch.long)
+        )
+        return {"eval_loss": loss.item()}
 
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_dataset,
+        train_dataset=tokenized_datasets["train"],
+        eval_dataset=tokenized_datasets["test"],
+        compute_metrics=compute_metrics,
     )
 
-    trainer.train(
-        resume_from_checkpoint="./output/checkpoint-81000"
-    )
+    trainer.train()
 
     tokenizer.save_pretrained(output_dir)
     model.save_pretrained(output_dir)
@@ -79,7 +98,7 @@ def train(
 
 
 def main():
-    train_file_path = "./data/output.txt"
+    train_file_path = "./get_data/data/output.txt"
     output_dir = "./output"
     per_device_train_batch_size = 1
     num_train_epochs = 8

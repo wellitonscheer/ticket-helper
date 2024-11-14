@@ -1,0 +1,7 @@
+# dados pra treinamento, são muito grande
+ai/data/inputs/*
+ai/data/outputs/*
+ai/get_data/data/*
+
+# ia treinada, mais de giga cada pasta
+ai/output*

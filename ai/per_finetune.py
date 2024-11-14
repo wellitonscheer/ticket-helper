@@ -5,12 +5,11 @@ from transformers import Trainer, TrainingArguments
 import nltk
 from nltk.tokenize import sent_tokenize
 
-
+# Download necessary NLTK resources
 nltk.download("punkt_tab")
 nltk.download("punkt")
 nltk.download("wordnet")
 nltk.download("omw")
-
 
 def load_and_split_sentences(train_file_path: str) -> List[str]:
     with open(train_file_path, "r") as file:
@@ -19,15 +18,12 @@ def load_and_split_sentences(train_file_path: str) -> List[str]:
     sentences = sent_tokenize(text, "portuguese")
     return sentences
 
-
 def train(
     train_file_path: str,
     output_dir: str,
     per_device_train_batch_size: int,
-    num_train_epochs: float,
+    num_train_epochs: int,
 ):
-    # tokenizer = GPT2Tokenizer.from_pretrained("Locutusque/gpt2-conversational-or-qa")
-    # model = GPT2LMHeadModel.from_pretrained("Locutusque/gpt2-conversational-or-qa")
     tokenizer = GPT2Tokenizer.from_pretrained("openai-community/gpt2-medium")
     model = GPT2LMHeadModel.from_pretrained("openai-community/gpt2-medium")
     model.to("cuda")
@@ -42,6 +38,7 @@ def train(
             return_tensors="pt",
             padding="max_length",
             truncation=True,
+            max_length=128  # Limit max length to avoid excessive padding
         )
         encoding.to("cuda")
         encoding["labels"] = encoding["input_ids"].clone()
@@ -60,7 +57,12 @@ def train(
         learning_rate=1e-4,
         weight_decay=0.01,
         num_train_epochs=num_train_epochs,
-        save_total_limit=2
+        evaluation_strategy="epoch",  # Evaluate at the end of each epoch
+        save_strategy="epoch",  # Save model at the end of each epoch
+        load_best_model_at_end=True,  # Load the best model when finished training (default metric is loss)
+        metric_for_best_model="loss",  # Use loss to evaluate the best model
+        greater_is_better=False,  # Lower loss is better
+        logging_dir='./logs',  # Directory for storing logs
     )
 
     trainer = Trainer(
@@ -69,20 +71,16 @@ def train(
         train_dataset=tokenized_dataset,
     )
 
-    trainer.train(
-        resume_from_checkpoint="./output/checkpoint-81000"
-    )
+    trainer.train()
 
     tokenizer.save_pretrained(output_dir)
     model.save_pretrained(output_dir)
-    trainer.save_model()
-
 
 def main():
-    train_file_path = "./data/output.txt"
+    train_file_path = "./get_data/data/output.txt"
     output_dir = "./output"
     per_device_train_batch_size = 1
-    num_train_epochs = 8
+    num_train_epochs = 5  # Reduced number of epochs
 
     train(
         train_file_path=train_file_path,
@@ -90,7 +88,6 @@ def main():
         per_device_train_batch_size=per_device_train_batch_size,
         num_train_epochs=num_train_epochs,
     )
-
 
 if __name__ == "__main__":
     main()

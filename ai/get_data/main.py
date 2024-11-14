@@ -39,7 +39,7 @@ def fetch_and_save(thread_id, first_page, last_page):
         try:
             logging.info("Thread %s: Sending GET request to %s", thread_id, url)
             
-            response = requests.get(url, headers=headers, cookies=cookies, timeout=3)
+            response = requests.get(url, headers=headers, cookies=cookies)
             
             if response.status_code == 200:
                 logging.info("Thread %s: Page_id %d: Request successful! Status code: %d", thread_id, page_id, response.status_code)
@@ -61,8 +61,8 @@ def fetch_and_save(thread_id, first_page, last_page):
         except requests.exceptions.RequestException as e:
             logging.error("Thread %s: Page_id %d: Request failed: %s", thread_id, page_id, e)
 
-pages_per_thread = 160
-last_search_page = 20000
+pages_per_thread = 700
+last_search_page = 88
 threads = []
 amount_threads = 50
 for thread_id in range(1, amount_threads + 1):
