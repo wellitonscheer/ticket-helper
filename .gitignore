@@ -5,3 +5,6 @@ ai/get_data/data/*
 
 # ia treinada, mais de giga cada pasta
 ai/output*
+
+# milvus db docker volume
+milvus/volumes/*
