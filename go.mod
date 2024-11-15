@@ -1,4 +1,4 @@
-module extension
+module github.com/wellitonscheer/ticket-helper
 
 go 1.23.2
 
