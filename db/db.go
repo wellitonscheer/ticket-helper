@@ -2,41 +2,69 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
-func TestDb() {
-	// Milvus instance proxy address, may verify in your env/settings
-	milvusAddr := `localhost:19530`
+var lock = &sync.Mutex{}
 
-	// setup context for client creation, use 2 seconds here
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
+type MilvusClient struct {
+	c      client.Client
+	ctx    context.Context
+	cancel context.CancelFunc
+}
 
-	c, err := client.NewClient(ctx, client.Config{
-		Address: milvusAddr,
-	})
-	if err != nil {
-		// handling error and exit, to make example simple here
-		log.Fatal("failed to connect to milvus:", err.Error())
+var milvusInstance *MilvusClient
+
+func GetMilvusInstance() *MilvusClient {
+	if milvusInstance == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		if milvusInstance == nil {
+			fmt.Println("Creating single instance now.")
+
+			milvusAddr := `localhost:19530`
+
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+
+			c, err := client.NewClient(ctx, client.Config{
+				Address: milvusAddr,
+			})
+			if err != nil {
+				log.Fatal("failed to connect to milvus:", err.Error())
+			}
+
+			milvusInstance = &MilvusClient{c, ctx, cancel}
+		} else {
+			fmt.Println("Single instance already created.")
+		}
+	} else {
+		fmt.Println("Single instance already created.")
 	}
+
+	return milvusInstance
+}
+
+func TestDb() {
+	milvus := GetMilvusInstance()
 
 	collectionName := `gosdk_basic_collection`
 
 	// first, lets check the collection exists
-	collExists, err := c.HasCollection(ctx, collectionName)
+	collExists, err := (*milvus).c.HasCollection(milvus.ctx, collectionName)
 	if err != nil {
 		log.Fatal("failed to check collection exists:", err.Error())
 	}
 	if collExists {
 		// let's say the example collection is only for sampling the API
 		// drop old one in case early crash or something
-		_ = c.DropCollection(ctx, collectionName)
+		_ = milvus.c.DropCollection(milvus.ctx, collectionName)
 	}
 
 	// define collection schema
@@ -62,12 +90,12 @@ func TestDb() {
 			},
 		},
 	}
-	err = c.CreateCollection(ctx, schema, entity.DefaultShardNumber)
+	err = milvus.c.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
 		log.Fatal("failed to create collection:", err.Error())
 	}
 
-	collections, err := c.ListCollections(ctx)
+	collections, err := milvus.c.ListCollections(milvus.ctx)
 	if err != nil {
 		log.Fatal("failed to list collections:", err.Error())
 	}
@@ -77,7 +105,7 @@ func TestDb() {
 	}
 
 	// show collection partitions
-	partitions, err := c.ShowPartitions(ctx, collectionName)
+	partitions, err := milvus.c.ShowPartitions(milvus.ctx, collectionName)
 	if err != nil {
 		log.Fatal("failed to show partitions:", err.Error())
 	}
@@ -88,14 +116,14 @@ func TestDb() {
 
 	partitionName := "new_partition"
 	// now let's try to create a partition
-	err = c.CreatePartition(ctx, collectionName, partitionName)
+	err = milvus.c.CreatePartition(milvus.ctx, collectionName, partitionName)
 	if err != nil {
 		log.Fatal("failed to create partition:", err.Error())
 	}
 
 	log.Println("After create partition")
 	// show collection partitions, check creation
-	partitions, err = c.ShowPartitions(ctx, collectionName)
+	partitions, err = milvus.c.ShowPartitions(milvus.ctx, collectionName)
 	if err != nil {
 		log.Fatal("failed to show partitions:", err.Error())
 	}
@@ -104,6 +132,6 @@ func TestDb() {
 	}
 
 	// clean up our mess
-	_ = c.DropCollection(ctx, collectionName)
-	c.Close()
+	_ = milvus.c.DropCollection(milvus.ctx, collectionName)
+	milvus.c.Close()
 }
