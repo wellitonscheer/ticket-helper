@@ -1,3 +1,5 @@
+.env
+
 # dados pra treinamento, são muito grande
 ai/data/inputs/*
 ai/data/outputs/*
@@ -7,4 +9,4 @@ ai/get_data/data/*
 ai/output*
 
 # milvus db docker volume
-milvus/volumes/*
+volumes/*
