@@ -20,7 +20,7 @@ func FunGin() {
 
 	r.GET("/user/:name", func(c *gin.Context) {
 		user := c.Params.ByName("name")
-		db.TestDb()
+		db.User.Save()
 		value, ok := dbMock[user]
 		if ok {
 			c.JSON(http.StatusOK, gin.H{"user": user, "value": value})

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -21,7 +20,7 @@ type MilvusClient struct {
 
 var milvusInstance *MilvusClient
 
-func GetMilvusInstance() *MilvusClient {
+func getMilvusInstance() *MilvusClient {
 	if milvusInstance == nil {
 		lock.Lock()
 		defer lock.Unlock()
@@ -31,7 +30,7 @@ func GetMilvusInstance() *MilvusClient {
 			milvusAddr := `localhost:19530`
 
 			ctx := context.Background()
-			ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			ctx, cancel := context.WithCancel(ctx)
 
 			c, err := client.NewClient(ctx, client.Config{
 				Address: milvusAddr,
@@ -52,7 +51,7 @@ func GetMilvusInstance() *MilvusClient {
 }
 
 func TestDb() {
-	milvus := GetMilvusInstance()
+	milvus := getMilvusInstance()
 
 	collectionName := `gosdk_basic_collection`
 
