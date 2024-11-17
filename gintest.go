@@ -1,15 +1,25 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/wellitonscheer/ticket-helper/db"
 )
 
 var dbMock = make(map[string]string)
 
 func FunGin() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file:", err.Error())
+	}
+	ginPort := os.Getenv("GIN_PORT")
+
 	r := gin.Default()
 
 	r.GET("/ping", func(c *gin.Context) {
@@ -29,5 +39,5 @@ func FunGin() {
 		}
 	})
 
-	r.Run(":8080")
+	r.Run(fmt.Sprintf(":%s", ginPort))
 }

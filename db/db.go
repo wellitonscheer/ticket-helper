@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 
+	"github.com/joho/godotenv"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
@@ -26,8 +28,15 @@ func getMilvusInstance() *MilvusClient {
 		defer lock.Unlock()
 		if milvusInstance == nil {
 			fmt.Println("Creating single instance now.")
+			err := godotenv.Load()
+			if err != nil {
+				log.Fatal("Error loading .env file:", err.Error())
+			}
 
-			milvusAddr := `localhost:19530`
+			baseURL := os.Getenv("BASE_URL")
+			milvusPort := os.Getenv("MILVUS_PORT")
+
+			milvusAddr := fmt.Sprintf("%s:%s", baseURL, milvusPort)
 
 			ctx := context.Background()
 			ctx, cancel := context.WithCancel(ctx)
