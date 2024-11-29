@@ -50,10 +50,10 @@ def generate_text(sequence: str) -> str:
 
 
 def main():
-    sequence = '''Olá, tudo bem? 
-Preciso de ajuda para baixar/encontrar o logos no IOS, não estou encontrado!
-
-Atenciosamente:. '''
+    sequence = '''
+    Olá, tudo bem? 
+    Preciso de ajuda para baixar/encontrar o logos no IOS, não estou encontrado!
+'''
     result = generate_text(sequence)
     print("result aaaaaaaaaaaaaaaaaaaaaaaaa\n")
     print(result)
