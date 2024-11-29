@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
@@ -22,7 +23,7 @@ type MilvusClient struct {
 
 var milvusInstance *MilvusClient
 
-func getMilvusInstance() *MilvusClient {
+func getMilvusInstance() (*MilvusClient, error) {
 	if milvusInstance == nil {
 		lock.Lock()
 		defer lock.Unlock()
@@ -30,7 +31,7 @@ func getMilvusInstance() *MilvusClient {
 			fmt.Println("Creating single instance now.")
 			err := godotenv.Load()
 			if err != nil {
-				log.Fatal("Error loading .env file:", err.Error())
+				return nil, fmt.Errorf("error loading .env file: %v", err.Error())
 			}
 
 			baseURL := os.Getenv("BASE_URL")
@@ -42,10 +43,12 @@ func getMilvusInstance() *MilvusClient {
 			ctx, cancel := context.WithCancel(ctx)
 
 			c, err := client.NewClient(ctx, client.Config{
-				Address: milvusAddr,
+				Address:        milvusAddr,
+				RetryRateLimit: &client.RetryRateLimitOption{MaxRetry: 3, MaxBackoff: time.Second * 2},
 			})
 			if err != nil {
-				log.Fatal("failed to connect to milvus:", err.Error())
+				cancel()
+				return nil, fmt.Errorf("failed to connect to milvus: %v", err.Error())
 			}
 
 			milvusInstance = &MilvusClient{c, ctx, cancel}
@@ -56,23 +59,27 @@ func getMilvusInstance() *MilvusClient {
 		fmt.Println("Single instance already created.")
 	}
 
-	return milvusInstance
+	return milvusInstance, nil
 }
 
-func TestDb() {
-	milvus := getMilvusInstance()
+func TestDb() error {
+	milvus, err := getMilvusInstance()
+	if err != nil {
+		return fmt.Errorf("failed connecting to milvus: %v", err.Error())
+	}
 
 	collectionName := `gosdk_basic_collection`
 
 	// first, lets check the collection exists
 	collExists, err := (*milvus).c.HasCollection(milvus.ctx, collectionName)
 	if err != nil {
-		log.Fatal("failed to check collection exists:", err.Error())
+		return fmt.Errorf("failed to check collection exists: %v", err.Error())
 	}
 	if collExists {
 		// let's say the example collection is only for sampling the API
 		// drop old one in case early crash or something
-		_ = milvus.c.DropCollection(milvus.ctx, collectionName)
+		err = milvus.c.DropCollection(milvus.ctx, collectionName)
+		return fmt.Errorf("failed to drop collection: %v", err.Error())
 	}
 
 	// define collection schema
@@ -100,12 +107,12 @@ func TestDb() {
 	}
 	err = milvus.c.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
-		log.Fatal("failed to create collection:", err.Error())
+		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
 
 	collections, err := milvus.c.ListCollections(milvus.ctx)
 	if err != nil {
-		log.Fatal("failed to list collections:", err.Error())
+		return fmt.Errorf("failed to list collections: %v", err.Error())
 	}
 	for _, collection := range collections {
 		// print all the collections, id & name
@@ -115,7 +122,7 @@ func TestDb() {
 	// show collection partitions
 	partitions, err := milvus.c.ShowPartitions(milvus.ctx, collectionName)
 	if err != nil {
-		log.Fatal("failed to show partitions:", err.Error())
+		return fmt.Errorf("failed to show partitions: %v", err.Error())
 	}
 	for _, partition := range partitions {
 		// print partition info, the shall be a default partition for out collection
@@ -126,14 +133,14 @@ func TestDb() {
 	// now let's try to create a partition
 	err = milvus.c.CreatePartition(milvus.ctx, collectionName, partitionName)
 	if err != nil {
-		log.Fatal("failed to create partition:", err.Error())
+		return fmt.Errorf("failed to create partition: %v", err.Error())
 	}
 
 	log.Println("After create partition")
 	// show collection partitions, check creation
 	partitions, err = milvus.c.ShowPartitions(milvus.ctx, collectionName)
 	if err != nil {
-		log.Fatal("failed to show partitions:", err.Error())
+		return fmt.Errorf("failed to show partitions: %v", err.Error())
 	}
 	for _, partition := range partitions {
 		log.Printf("partition id: %d, name: %s\n", partition.ID, partition.Name)
@@ -142,4 +149,6 @@ func TestDb() {
 	// clean up our mess
 	_ = milvus.c.DropCollection(milvus.ctx, collectionName)
 	milvus.c.Close()
+
+	return nil
 }
