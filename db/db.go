@@ -70,36 +70,30 @@ func TestDb() error {
 
 	collectionName := `gosdk_basic_collection`
 
-	// first, lets check the collection exists
 	collExists, err := (*milvus).c.HasCollection(milvus.ctx, collectionName)
 	if err != nil {
 		return fmt.Errorf("failed to check collection exists: %v", err.Error())
 	}
 	if collExists {
-		// let's say the example collection is only for sampling the API
-		// drop old one in case early crash or something
 		err = milvus.c.DropCollection(milvus.ctx, collectionName)
 		return fmt.Errorf("failed to drop collection: %v", err.Error())
 	}
 
-	// define collection schema
 	schema := &entity.Schema{
 		CollectionName: collectionName,
 		Description:    "this is the basic example collection",
 		AutoID:         true,
 		Fields: []*entity.Field{
-			// currently primary key field is compulsory, and only int64 is allowd
 			{
 				Name:       "int64",
 				DataType:   entity.FieldTypeInt64,
 				PrimaryKey: true,
 				AutoID:     true,
 			},
-			// also the vector field is needed
 			{
 				Name:     "vector",
 				DataType: entity.FieldTypeFloatVector,
-				TypeParams: map[string]string{ // the vector dim may changed def method in release
+				TypeParams: map[string]string{
 					entity.TypeParamDim: "128",
 				},
 			},
@@ -115,29 +109,24 @@ func TestDb() error {
 		return fmt.Errorf("failed to list collections: %v", err.Error())
 	}
 	for _, collection := range collections {
-		// print all the collections, id & name
 		log.Printf("Collection id: %d, name: %s\n", collection.ID, collection.Name)
 	}
 
-	// show collection partitions
 	partitions, err := milvus.c.ShowPartitions(milvus.ctx, collectionName)
 	if err != nil {
 		return fmt.Errorf("failed to show partitions: %v", err.Error())
 	}
 	for _, partition := range partitions {
-		// print partition info, the shall be a default partition for out collection
 		log.Printf("partition id: %d, name: %s\n", partition.ID, partition.Name)
 	}
 
 	partitionName := "new_partition"
-	// now let's try to create a partition
 	err = milvus.c.CreatePartition(milvus.ctx, collectionName, partitionName)
 	if err != nil {
 		return fmt.Errorf("failed to create partition: %v", err.Error())
 	}
 
 	log.Println("After create partition")
-	// show collection partitions, check creation
 	partitions, err = milvus.c.ShowPartitions(milvus.ctx, collectionName)
 	if err != nil {
 		return fmt.Errorf("failed to show partitions: %v", err.Error())
@@ -146,7 +135,6 @@ func TestDb() error {
 		log.Printf("partition id: %d, name: %s\n", partition.ID, partition.Name)
 	}
 
-	// clean up our mess
 	_ = milvus.c.DropCollection(milvus.ctx, collectionName)
 	milvus.c.Close()
 

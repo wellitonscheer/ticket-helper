@@ -30,9 +30,10 @@ func FunGin() {
 
 	r.GET("/user/:name", func(c *gin.Context) {
 		user := c.Params.ByName("name")
-		err := db.User.Save()
+		err := db.User.Save(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create user: %s", err.Error())})
+			return
 		}
 		value, ok := dbMock[user]
 		if ok {
