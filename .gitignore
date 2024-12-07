@@ -1,5 +1,7 @@
 .env
 
+tmp
+
 # dados pra treinamento, são muito grande
 ai/data/inputs/*
 ai/data/outputs/*
