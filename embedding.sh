@@ -32,7 +32,7 @@ echo "Starting $EMBED_CONTAINER_NAME..."
 docker run -d --name $EMBED_CONTAINER_NAME --gpus all -p $EMBED_PORT:80 -v $volume:/data --pull always ghcr.io/huggingface/text-embeddings-inference:1.5 --model-id $model
 
 
-# use: (return a 1024 length list of numbers for each input)
+# usage: (return a 1024 length list of numbers for each input)
 #    curl 127.0.0.1:5000/embed \
 #        -X POST \
 #        -d '{"inputs": ["What is Deep Learning?", "It's hot today."]}' \
