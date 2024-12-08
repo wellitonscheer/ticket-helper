@@ -104,11 +104,34 @@ func save(userName *string) error {
 	if err := json.Unmarshal(body, &embeddedUserName); err != nil {
 		return fmt.Errorf("failed to unmarshal embedded user name: %w, Response body: %s", err, string(body))
 	}
-	fmt.Printf("embedded response body: %v", embeddedUserName)
 
-	// idColumn := entity.NewColumnInt64("id", nil)
-	// userNameColumn := entity.NewColumnVarChar("userName", []string{*userName})
-	// vectorColumn := entity.NewColumnFloatVector("vector", 1024, [][]float32{})
+	userNameColumn := entity.NewColumnVarChar("userName", []string{*userName})
+	vectorColumn := entity.NewColumnFloatVector("vector", 1024, embeddedUserName)
+
+	_, err = milvus.c.Insert(milvus.ctx, collectionName, "", userNameColumn, vectorColumn)
+	if err != nil {
+		return fmt.Errorf("failed to insert user: %v", err.Error())
+	}
+
+	err = milvus.c.Flush(milvus.ctx, collectionName, false)
+	if err != nil {
+		return fmt.Errorf("failed to flush collection: %v", err.Error())
+	}
+
+	idx, err := entity.NewIndexIvfFlat(entity.COSINE, 2)
+	if err != nil {
+		return fmt.Errorf("fail to create ivf flat index: %v", err.Error())
+	}
+
+	err = milvus.c.CreateIndex(milvus.ctx, collectionName, "vector", idx, false)
+	if err != nil {
+		return fmt.Errorf("fail to create index: %v", err.Error())
+	}
+
+	err = milvus.c.LoadCollection(milvus.ctx, collectionName, false)
+	if err != nil {
+		return fmt.Errorf("failed to load collection: %v", err.Error())
+	}
 
 	return nil
 }
