@@ -81,7 +81,14 @@ func save(userName *string) error {
 		log.Printf("Collection id: %d, name: %s\n", collection.ID, collection.Name)
 	}
 
-	requestBody := []byte(fmt.Sprintf(`{"inputs": "["%s"]"}`, *userName))
+	data := map[string][]string{
+		"inputs": {*userName},
+	}
+	requestBody, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to create request body: %v", err.Error())
+	}
+
 	resp, err := http.Post("http://127.0.0.1:5000/embed", "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return fmt.Errorf("error to get user name embedding: %v", err.Error())
@@ -93,9 +100,9 @@ func save(userName *string) error {
 		return fmt.Errorf("failed to read embedded request body: %v", err.Error())
 	}
 
-	var embeddedUserName []float32
+	var embeddedUserName [][]float32
 	if err := json.Unmarshal(body, &embeddedUserName); err != nil {
-		return fmt.Errorf("failed to unmarshal embedded user name: %v", err.Error())
+		return fmt.Errorf("failed to unmarshal embedded user name: %w, Response body: %s", err, string(body))
 	}
 	fmt.Printf("embedded response body: %v", embeddedUserName)
 
