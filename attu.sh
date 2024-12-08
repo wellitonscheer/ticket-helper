@@ -12,4 +12,18 @@ if [ -z "$MY_IP" ] || [ -z "$ATTU_PORT" ] || [ -z "$MILVUS_PORT" ]; then
   exit 1
 fi
 
-docker run -d -p $ATTU_PORT:3000 -e MILVUS_URL=$MY_IP:$MILVUS_PORT zilliz/attu:v2.4
+res=$(docker ps | grep $ATTU_CONTAINER_NAME | grep healthy | wc -l)
+
+if [ "$res" -eq 1 ]; then
+  echo "$ATTU_CONTAINER_NAME is already running and healthy."
+  exit 0
+fi
+
+if docker ps -a | grep -q $ATTU_CONTAINER_NAME; then
+  echo "Container $ATTU_CONTAINER_NAME exists but is not running. Starting it."
+  docker start $ATTU_CONTAINER_NAME
+  exit 0
+fi
+
+echo "Starting $ATTU_CONTAINER_NAME..."
+docker run -d --name $ATTU_CONTAINER_NAME -p $ATTU_PORT:3000 -e MILVUS_URL=$MY_IP:$MILVUS_PORT zilliz/attu:v2.4
