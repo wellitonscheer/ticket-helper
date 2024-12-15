@@ -29,14 +29,14 @@ with open('inputs/os_ticket_raw.json', 'r', encoding='utf-8') as file:
         if ticket_id not in transformed_data:
             transformed_data[ticket_id] = []
         
-        # clean_body = remove_html_tags(item["body"])
+        clean_body = remove_html_tags(item["body"])
         
         # Append the current item (excluding ticket_id) to the list for the ticket_id
         transformed_data[ticket_id].append({
             "type": item["type"],
             "ordem": item["ordem"],
-            "body": item["body"]
-            # "body": clean_body
+            #"body": item["body"]
+            "body": clean_body
         })
 
 # Sort the items within each ticket_id by 'ordem' as we add them
