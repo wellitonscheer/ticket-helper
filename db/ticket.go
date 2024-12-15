@@ -116,14 +116,37 @@ func insertAllTickets() (string, error) {
 		}
 	}
 	fmt.Println("REALY INSERTING NOW!")
-	ticketIdColumn := entity.NewColumnVarChar("ticketId", ticketsIds)
-	ticketContentColumn := entity.NewColumnVarChar("ticketContent", ticketContents)
-	ticketContentVecColumn := entity.NewColumnFloatVector("ticketContentVector", 1024, ticketContentVector)
 
-	_, err = milvus.c.Insert(milvus.ctx, ticketCollName, "", ticketIdColumn, ticketContentColumn, ticketContentVecColumn)
-	if err != nil {
-		return "", fmt.Errorf("failed to insert tickets: %v", err.Error())
+	batchSize := 1000
+	for i := 0; i < len(ticketsIds); i += batchSize {
+		end := i + batchSize
+		if end > len(ticketsIds) {
+			end = len(ticketsIds)
+		}
+		fmt.Println(i, " to ", end)
+
+		ticketIdBatch := ticketsIds[i:end]
+		ticketContentBatch := ticketContents[i:end]
+		ticketContentVecBatch := ticketContentVector[i:end]
+
+		ticketIdColumn := entity.NewColumnVarChar("ticketId", ticketIdBatch)
+		ticketContentColumn := entity.NewColumnVarChar("ticketContent", ticketContentBatch)
+		ticketContentVecColumn := entity.NewColumnFloatVector("ticketContentVector", 1024, ticketContentVecBatch)
+
+		_, err = milvus.c.Insert(milvus.ctx, ticketCollName, "", ticketIdColumn, ticketContentColumn, ticketContentVecColumn)
+		if err != nil {
+			return "", fmt.Errorf("failed to insert tickets: %v", err.Error())
+		}
 	}
+
+	// ticketIdColumn := entity.NewColumnVarChar("ticketId", ticketsIds)
+	// ticketContentColumn := entity.NewColumnVarChar("ticketContent", ticketContents)
+	// ticketContentVecColumn := entity.NewColumnFloatVector("ticketContentVector", 1024, ticketContentVector)
+
+	// _, err = milvus.c.Insert(milvus.ctx, ticketCollName, "", ticketIdColumn, ticketContentColumn, ticketContentVecColumn)
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to insert tickets: %v", err.Error())
+	// }
 	fmt.Println("DONE inserting...")
 
 	err = milvus.c.Flush(milvus.ctx, ticketCollName, false)
