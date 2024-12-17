@@ -139,14 +139,6 @@ func insertAllTickets() (string, error) {
 		}
 	}
 
-	// ticketIdColumn := entity.NewColumnVarChar("ticketId", ticketsIds)
-	// ticketContentColumn := entity.NewColumnVarChar("ticketContent", ticketContents)
-	// ticketContentVecColumn := entity.NewColumnFloatVector("ticketContentVector", 1024, ticketContentVector)
-
-	// _, err = milvus.c.Insert(milvus.ctx, ticketCollName, "", ticketIdColumn, ticketContentColumn, ticketContentVecColumn)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to insert tickets: %v", err.Error())
-	// }
 	fmt.Println("DONE inserting...")
 
 	err = milvus.c.Flush(milvus.ctx, ticketCollName, false)
