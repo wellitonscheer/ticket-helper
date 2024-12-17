@@ -18,6 +18,8 @@ type UserService struct {
 
 var User = &UserService{save}
 
+var userCollName string = "user"
+
 func save(userName *string) error {
 	if userName == nil {
 		return errors.New("invalid user name")
@@ -28,48 +30,17 @@ func save(userName *string) error {
 		return fmt.Errorf("failed to connect to milvus: %v", err.Error())
 	}
 
-	collectionName := "user"
-
-	collExists, err := milvus.c.HasCollection(milvus.ctx, collectionName)
+	collExists, err := milvus.c.HasCollection(milvus.ctx, userCollName)
 	if err != nil {
 		return fmt.Errorf("failed to check collection exists: %v", err.Error())
 	}
 	// if collExists {
-	// 	_ = milvus.c.DropCollection(milvus.ctx, collectionName)
+	// 	_ = milvus.c.DropCollection(milvus.ctx, userCollName)
 	// }
 	if !collExists {
-		schema := &entity.Schema{
-			CollectionName: collectionName,
-			Description:    "usuario",
-			AutoID:         true,
-			Fields: []*entity.Field{
-				{
-					Name:       "id",
-					DataType:   entity.FieldTypeInt64,
-					PrimaryKey: true,
-					AutoID:     true,
-				},
-				{
-					Name:     "userName",
-					DataType: entity.FieldTypeVarChar,
-					TypeParams: map[string]string{
-						entity.TypeParamMaxLength: "200",
-					},
-					PrimaryKey: false,
-					AutoID:     false,
-				},
-				{
-					Name:     "vector",
-					DataType: entity.FieldTypeFloatVector,
-					TypeParams: map[string]string{
-						entity.TypeParamDim: "1024",
-					},
-				},
-			},
-		}
-		err = milvus.c.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
+		err = createUserCollection()
 		if err != nil {
-			return fmt.Errorf("failed to create collection: %v", err.Error())
+			return fmt.Errorf("failed to create collection '%s': %v", userCollName, err.Error())
 		}
 	}
 
@@ -108,14 +79,69 @@ func save(userName *string) error {
 	userNameColumn := entity.NewColumnVarChar("userName", []string{*userName})
 	vectorColumn := entity.NewColumnFloatVector("vector", 1024, embeddedUserName)
 
-	_, err = milvus.c.Insert(milvus.ctx, collectionName, "", userNameColumn, vectorColumn)
+	_, err = milvus.c.Insert(milvus.ctx, userCollName, "", userNameColumn, vectorColumn)
 	if err != nil {
 		return fmt.Errorf("failed to insert user: %v", err.Error())
 	}
 
-	err = milvus.c.Flush(milvus.ctx, collectionName, false)
+	err = milvus.c.Flush(milvus.ctx, userCollName, false)
 	if err != nil {
 		return fmt.Errorf("failed to flush collection: %v", err.Error())
+	}
+
+	return nil
+}
+
+// func search() error {
+// 	milvus, err := getMilvusInstance()
+// 	if err != nil {
+// 		return fmt.Errorf("failed to connect to milvus: %v", err.Error())
+// 	}
+
+// 	aaa := entity.SearchParam{}
+// 	milvus.c.Search(milvus.ctx, userCollName, nil, nil, []string{"userName"}, make([][]float32, 0, 1024), "vector", entity.COSINE, nil)
+
+// 	return nil
+// }
+
+func createUserCollection() error {
+	milvus, err := getMilvusInstance()
+	if err != nil {
+		return fmt.Errorf("failed to connect to milvus: %v", err.Error())
+	}
+
+	schema := &entity.Schema{
+		CollectionName: userCollName,
+		Description:    "usuario",
+		AutoID:         true,
+		Fields: []*entity.Field{
+			{
+				Name:       "id",
+				DataType:   entity.FieldTypeInt64,
+				PrimaryKey: true,
+				AutoID:     true,
+			},
+			{
+				Name:     "userName",
+				DataType: entity.FieldTypeVarChar,
+				TypeParams: map[string]string{
+					entity.TypeParamMaxLength: "200",
+				},
+				PrimaryKey: false,
+				AutoID:     false,
+			},
+			{
+				Name:     "vector",
+				DataType: entity.FieldTypeFloatVector,
+				TypeParams: map[string]string{
+					entity.TypeParamDim: "1024",
+				},
+			},
+		},
+	}
+	err = milvus.c.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
+	if err != nil {
+		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
 
 	idx, err := entity.NewIndexIvfFlat(entity.COSINE, 2)
@@ -123,12 +149,12 @@ func save(userName *string) error {
 		return fmt.Errorf("fail to create ivf flat index: %v", err.Error())
 	}
 
-	err = milvus.c.CreateIndex(milvus.ctx, collectionName, "vector", idx, false)
+	err = milvus.c.CreateIndex(milvus.ctx, userCollName, "vector", idx, false)
 	if err != nil {
 		return fmt.Errorf("fail to create index: %v", err.Error())
 	}
 
-	err = milvus.c.LoadCollection(milvus.ctx, collectionName, false)
+	err = milvus.c.LoadCollection(milvus.ctx, userCollName, false)
 	if err != nil {
 		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}
