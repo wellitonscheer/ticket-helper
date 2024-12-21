@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wellitonscheer/ticket-helper/db"
+	"github.com/wellitonscheer/ticket-helper/internal/db"
 )
 
 func Ticket(c *gin.Context) {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/wellitonscheer/ticket-helper/handlers"
+	"github.com/wellitonscheer/ticket-helper/internal/handlers"
 )
 
 func main() {
