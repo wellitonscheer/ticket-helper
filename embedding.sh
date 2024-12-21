@@ -29,7 +29,7 @@ if docker ps -a | grep -q $EMBED_CONTAINER_NAME; then
 fi
 
 echo "Starting $EMBED_CONTAINER_NAME..."
-docker run -d --name $EMBED_CONTAINER_NAME --gpus all -p $EMBED_PORT:80 -v $volume:/data --pull always ghcr.io/huggingface/text-embeddings-inference:1.5 --model-id $model
+docker run -d --name $EMBED_CONTAINER_NAME --gpus all -p $EMBED_PORT:80 -v $volume:/data --pull always ghcr.io/huggingface/text-embeddings-inference:1.5 --model-id $model --auto-truncate
 
 
 # usage: (return a 1024 length list of numbers for each input)

@@ -9,7 +9,7 @@ def remove_html_tags(text):
 transformed_data = {}
 
 # Read the data from the JSON file and process it
-with open('data_raw.json', 'r', encoding='utf-8') as file:
+with open('inputs/os_ticket_raw.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
     for item in data["data"]:
@@ -33,7 +33,9 @@ with open('data_raw.json', 'r', encoding='utf-8') as file:
         
         # Append the current item (excluding ticket_id) to the list for the ticket_id
         transformed_data[ticket_id].append({
+            "type": item["type"],
             "ordem": item["ordem"],
+            #"body": item["body"]
             "body": clean_body
         })
 
@@ -42,7 +44,7 @@ for ticket_id in transformed_data:
     transformed_data[ticket_id].sort(key=lambda x: x["ordem"])
 
 # Write the transformed data to a JSON file without pretty printing
-with open('id_list.json', 'w', encoding='utf-8') as file:
+with open('outputs/id_list.json', 'w', encoding='utf-8') as file:
     json.dump(transformed_data, file, ensure_ascii=False, indent=2)
 
 print("Transformation complete! The output is saved in 'output.json'.")
