@@ -44,13 +44,13 @@ func FunGin() {
 	})
 
 	r.GET("/tickets", func(c *gin.Context) {
-		ticketData, err := db.Ticket.InsertAllTickets()
+		err := db.Ticket.InsertAllTickets()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to insert tickets: %s", err.Error())})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"ticketData": ticketData})
+		c.JSON(http.StatusOK, "success")
 	})
 
 	r.Run(fmt.Sprintf(":%s", ginPort))

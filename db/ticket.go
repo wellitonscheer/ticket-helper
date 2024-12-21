@@ -12,7 +12,7 @@ import (
 )
 
 type TicketService struct {
-	InsertAllTickets func() (string, error)
+	InsertAllTickets func() error
 }
 
 var Ticket = &TicketService{
@@ -29,38 +29,35 @@ type TicketMessage struct {
 
 type TicketRawData map[string][]TicketMessage
 
-func insertAllTickets() (string, error) {
+func insertAllTickets() error {
 	milvus, err := getMilvusInstance()
 	if err != nil {
-		return "", fmt.Errorf("failed to connect to milvus: %v", err.Error())
+		return fmt.Errorf("failed to connect to milvus: %v", err.Error())
 	}
 
 	collExists, err := milvus.c.HasCollection(milvus.ctx, ticketCollName)
 	if err != nil {
-		return "", fmt.Errorf("failed to check if collection exists: %v", err.Error())
+		return fmt.Errorf("failed to check if collection exists: %v", err.Error())
 	}
 
 	if !collExists {
 		err = createTicketCollection()
 		if err != nil {
-			return "", fmt.Errorf("failed to create collection: %v", err.Error())
+			return fmt.Errorf("failed to create collection: %v", err.Error())
 		}
 	}
 
 	rawData, err := os.ReadFile("./ai/data/outputs/id_list.json")
 	if err != nil {
-		return "", fmt.Errorf("failed to read from json file: %v", err.Error())
+		return fmt.Errorf("failed to read from json file: %v", err.Error())
 	}
 
 	var jsonData TicketRawData
 	err = json.Unmarshal(rawData, &jsonData)
 	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal raw ticket data: %v", err.Error())
+		return fmt.Errorf("failed to unmarshal raw ticket data: %v", err.Error())
 	}
 
-	maxBodyLength := 0
-	ticketMax := ""
-	ticketsAmount := 0
 	ticketsIds := []string{}
 	ticketContents := []string{}
 	ticketContentVector := [][]float32{}
@@ -80,40 +77,34 @@ func insertAllTickets() (string, error) {
 		}
 		requestBody, err := json.Marshal(data)
 		if err != nil {
-			return "", fmt.Errorf("failed to create request body: %v", err.Error())
+			return fmt.Errorf("failed to create request body: %v", err.Error())
 		}
 
 		resp, err := http.Post("http://127.0.0.1:5000/embed", "application/json", bytes.NewBuffer(requestBody))
 		if err != nil {
-			return "", fmt.Errorf("error to get body message embedding: %v", err.Error())
+			return fmt.Errorf("error to get body message embedding: %v", err.Error())
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return "", fmt.Errorf("failed to read embedded request body: %v", err.Error())
+			return fmt.Errorf("failed to read embedded request body: %v", err.Error())
 		}
 
 		var embeddedBodyMessage [][]float32
 		if err := json.Unmarshal(body, &embeddedBodyMessage); err != nil {
-			return "", fmt.Errorf("failed to unmarshal embedded body message: %w, Response body: %s", err, string(body))
+			return fmt.Errorf("failed to unmarshal embedded body message: %w, Response body: %s", err, string(body))
 		}
 		if len(embeddedBodyMessage) > 1 {
-			fmt.Println(ticketId)
-			fmt.Println(embeddedBodyMessage)
-			fmt.Println(len(fullBodyMassage))
+			fmt.Println("embedded body message returned two vectors, ticketId: ", ticketId)
+			fmt.Println("embedded body message: ", embeddedBodyMessage)
+			fmt.Println("fullBodyMessage legth used in the embedded: ", len(fullBodyMassage))
 			break
 		}
 
 		ticketsIds = append(ticketsIds, ticketId)
 		ticketContents = append(ticketContents, fullBodyMassage)
 		ticketContentVector = append(ticketContentVector, embeddedBodyMessage...)
-
-		if len(fullBodyMassage) > maxBodyLength && len(fullBodyMassage) < 29164 {
-			maxBodyLength = len(fullBodyMassage)
-			ticketMax = ticketId
-			ticketsAmount++
-		}
 	}
 	fmt.Println("REALY INSERTING NOW!")
 
@@ -135,7 +126,7 @@ func insertAllTickets() (string, error) {
 
 		_, err = milvus.c.Insert(milvus.ctx, ticketCollName, "", ticketIdColumn, ticketContentColumn, ticketContentVecColumn)
 		if err != nil {
-			return "", fmt.Errorf("failed to insert tickets: %v", err.Error())
+			return fmt.Errorf("failed to insert tickets: %v", err.Error())
 		}
 	}
 
@@ -143,15 +134,15 @@ func insertAllTickets() (string, error) {
 
 	err = milvus.c.Flush(milvus.ctx, ticketCollName, false)
 	if err != nil {
-		return "", fmt.Errorf("failed to flush collection: %v", err.Error())
+		return fmt.Errorf("failed to flush collection: %v", err.Error())
 	}
 
 	err = milvus.c.LoadCollection(milvus.ctx, ticketCollName, false)
 	if err != nil {
-		return "", fmt.Errorf("failed to load collection: %v", err.Error())
+		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}
 
-	return fmt.Sprintf("ticketAmount: %s, ticket: %s, length: %s", fmt.Sprint(ticketsAmount), ticketMax, fmt.Sprint(maxBodyLength)), nil
+	return nil
 }
 
 func createTicketCollection() error {
