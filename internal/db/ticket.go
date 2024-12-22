@@ -1,14 +1,12 @@
 package db
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/wellitonscheer/ticket-helper/internal/service"
 )
 
 type TicketService struct {
@@ -63,47 +61,32 @@ func insertAllTickets() error {
 	ticketContentVector := [][]float32{}
 	for ticketId, ticketMessages := range jsonData {
 		fmt.Println("processing: ", ticketId)
-		fullBodyMassage := ""
+		fullBodyMessage := ""
 		for _, message := range ticketMessages {
-			fullBodyMassage = fmt.Sprintf("%s | %s", fullBodyMassage, message.Body)
+			fullBodyMessage = fmt.Sprintf("%s | %s", fullBodyMessage, message.Body)
 		}
 
-		if len(fullBodyMassage) > 65534 {
+		if len(fullBodyMessage) > 65534 {
 			continue
 		}
 
-		data := map[string][]string{
-			"inputs": {fullBodyMassage},
+		data := service.Input{
+			Inputs: []string{fullBodyMessage},
 		}
-		requestBody, err := json.Marshal(data)
+		embeddedBodyMessage, err := service.GetTextEmbeddings(&data)
 		if err != nil {
-			return fmt.Errorf("failed to create request body: %v", err.Error())
+			return fmt.Errorf("failed to get fullBodyMessage embeddings: %v", err.Error())
 		}
 
-		resp, err := http.Post("http://127.0.0.1:5000/embed", "application/json", bytes.NewBuffer(requestBody))
-		if err != nil {
-			return fmt.Errorf("error to get body message embedding: %v", err.Error())
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("failed to read embedded request body: %v", err.Error())
-		}
-
-		var embeddedBodyMessage [][]float32
-		if err := json.Unmarshal(body, &embeddedBodyMessage); err != nil {
-			return fmt.Errorf("failed to unmarshal embedded body message: %w, Response body: %s", err, string(body))
-		}
 		if len(embeddedBodyMessage) > 1 {
 			fmt.Println("embedded body message returned two vectors, ticketId: ", ticketId)
 			fmt.Println("embedded body message: ", embeddedBodyMessage)
-			fmt.Println("fullBodyMessage legth used in the embedded: ", len(fullBodyMassage))
+			fmt.Println("fullBodyMessage legth used in the embedded: ", len(fullBodyMessage))
 			break
 		}
 
 		ticketsIds = append(ticketsIds, ticketId)
-		ticketContents = append(ticketContents, fullBodyMassage)
+		ticketContents = append(ticketContents, fullBodyMessage)
 		ticketContentVector = append(ticketContentVector, embeddedBodyMessage...)
 	}
 	fmt.Println("REALY INSERTING NOW!")

@@ -11,9 +11,9 @@ import (
 func Ticket(c *gin.Context) {
 	err := db.Ticket.InsertAllTickets()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to insert tickets: %s", err.Error())})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to insert tickets: %s", err.Error())})
 		return
 	}
 
-	c.JSON(http.StatusOK, "success")
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
