@@ -29,6 +29,7 @@ func main() {
 	r.GET("/user/:name", handlers.User)
 
 	r.GET("/tickets", handlers.Ticket)
+	r.GET("/tickets/search/:input", handlers.VectorSearch)
 
 	r.Run(fmt.Sprintf(":%s", ginPort))
 }
