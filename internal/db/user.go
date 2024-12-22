@@ -1,26 +1,23 @@
 package db
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/wellitonscheer/ticket-helper/internal/service"
 )
 
 type UserService struct {
-	Save func(userName *string) error
+	NewUser func(userName *string) error
 }
 
-var User = &UserService{save}
+var User = &UserService{NewUser}
 
 var userCollName string = "user"
 
-func save(userName *string) error {
+func NewUser(userName *string) error {
 	if userName == nil {
 		return errors.New("invalid user name")
 	}
@@ -52,28 +49,12 @@ func save(userName *string) error {
 		log.Printf("Collection id: %d, name: %s\n", collection.ID, collection.Name)
 	}
 
-	data := map[string][]string{
-		"inputs": {*userName},
+	data := service.Input{
+		Inputs: []string{*userName},
 	}
-	requestBody, err := json.Marshal(data)
+	embeddedUserName, err := service.GetTextEmbeddings(&data)
 	if err != nil {
-		return fmt.Errorf("failed to create request body: %v", err.Error())
-	}
-
-	resp, err := http.Post("http://127.0.0.1:5000/embed", "application/json", bytes.NewBuffer(requestBody))
-	if err != nil {
-		return fmt.Errorf("error to get user name embedding: %v", err.Error())
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read embedded request body: %v", err.Error())
-	}
-
-	var embeddedUserName [][]float32
-	if err := json.Unmarshal(body, &embeddedUserName); err != nil {
-		return fmt.Errorf("failed to unmarshal embedded user name: %w, Response body: %s", err, string(body))
+		return fmt.Errorf("failed to get user name embeddings: %v", err.Error())
 	}
 
 	userNameColumn := entity.NewColumnVarChar("userName", []string{*userName})
