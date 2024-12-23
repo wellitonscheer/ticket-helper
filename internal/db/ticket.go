@@ -69,7 +69,8 @@ func insertAllTickets() error {
 			fullBodyMessage = fmt.Sprintf("%s | %s", fullBodyMessage, message.Body)
 		}
 
-		if len(fullBodyMessage) > 65534 {
+		if len(fullBodyMessage) > 65534 || len(fullBodyMessage) < 30 {
+			fmt.Println("ignored: ", ticketId)
 			continue
 		}
 
@@ -91,6 +92,7 @@ func insertAllTickets() error {
 		ticketsIds = append(ticketsIds, ticketId)
 		ticketContents = append(ticketContents, fullBodyMessage)
 		ticketContentVector = append(ticketContentVector, embeddedBodyMessage...)
+		fmt.Println("finished: ", ticketId)
 	}
 	fmt.Println("REALY INSERTING NOW!")
 

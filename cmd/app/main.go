@@ -26,10 +26,10 @@ func main() {
 		})
 	})
 
-	r.GET("/user/:name", handlers.User)
+	r.GET("/user/:name", handlers.UserNew)
 
-	r.GET("/tickets", handlers.Ticket)
-	r.GET("/tickets/search/:input", handlers.VectorSearch)
+	r.GET("/tickets", handlers.TicketInsertAll)
+	r.GET("/tickets/search/:input", handlers.TicketVectorSearch)
 
 	r.Run(fmt.Sprintf(":%s", ginPort))
 }

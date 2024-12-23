@@ -8,7 +8,7 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/db"
 )
 
-func User(c *gin.Context) {
+func UserNew(c *gin.Context) {
 	user := c.Params.ByName("name")
 	err := db.User.NewUser(&user)
 	if err != nil {
