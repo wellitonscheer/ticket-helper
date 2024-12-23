@@ -23,9 +23,11 @@ var Ticket = &TicketService{
 var ticketCollName string = "ticket"
 
 type TicketMessage struct {
-	Type  string `json:"type"`
-	Ordem int32  `json:"ordem"`
-	Body  string `json:"body"`
+	Type    string `json:"type"`
+	Ordem   int32  `json:"ordem"`
+	Subject string `json:"subject"`
+	Poster  string `json:"poster"`
+	Body    string `json:"body"`
 }
 
 type TicketRawData map[string][]TicketMessage
@@ -48,7 +50,7 @@ func insertAllTickets() error {
 		}
 	}
 
-	rawData, err := os.ReadFile("./ai/data/outputs/id_list.json")
+	rawData, err := os.ReadFile("./ai/data/outputs/id_list__.json")
 	if err != nil {
 		return fmt.Errorf("failed to read from json file: %v", err.Error())
 	}
@@ -65,11 +67,25 @@ func insertAllTickets() error {
 	for ticketId, ticketMessages := range jsonData {
 		fmt.Println("processing: ", ticketId)
 		fullBodyMessage := ""
-		for _, message := range ticketMessages {
-			fullBodyMessage = fmt.Sprintf("%s | %s", fullBodyMessage, message.Body)
+		for i, message := range ticketMessages {
+			tipo := ""
+			switch message.Type {
+			case "M":
+				tipo = "mensagem"
+			case "R":
+				tipo = "resposta"
+			case "N":
+				tipo = "nota interna"
+				fmt.Println(tipo)
+			}
+			if i == 0 {
+				fullBodyMessage += fmt.Sprintf("%s %s", message.Subject, message.Body)
+				continue
+			}
+			fullBodyMessage = fmt.Sprintf("%s %s", fullBodyMessage, message.Body)
 		}
 
-		if len(fullBodyMessage) > 65534 || len(fullBodyMessage) < 30 {
+		if len(fullBodyMessage) > 65534 || len(fullBodyMessage) < 5 {
 			fmt.Println("ignored: ", ticketId)
 			continue
 		}
@@ -163,7 +179,7 @@ func vectorSearch(search *string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create new index flat search param: %v", err.Error())
 	}
-	searchResults, err := milvus.c.Search(milvus.ctx, ticketCollName, nil, "", []string{"ticketId"}, []entity.Vector{vector}, "ticketContentVector", entity.COSINE, 10, sp)
+	searchResults, err := milvus.c.Search(milvus.ctx, ticketCollName, nil, "", []string{"ticketId"}, []entity.Vector{vector}, "ticketContentVector", entity.COSINE, 20, sp)
 	if err != nil {
 		return "", fmt.Errorf("failed to search ticket: %v", err.Error())
 	}
