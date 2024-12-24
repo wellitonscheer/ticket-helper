@@ -22,16 +22,6 @@ var Ticket = &TicketService{
 
 var ticketCollName string = "ticket"
 
-type TicketMessage struct {
-	Type    string `json:"type"`
-	Ordem   int32  `json:"ordem"`
-	Subject string `json:"subject"`
-	Poster  string `json:"poster"`
-	Body    string `json:"body"`
-}
-
-type TicketRawData map[string][]TicketMessage
-
 func insertAllTickets() error {
 	milvus, err := getMilvusInstance()
 	if err != nil {
@@ -50,7 +40,7 @@ func insertAllTickets() error {
 		}
 	}
 
-	rawData, err := os.ReadFile("./ai/data/outputs/id_list__.json")
+	rawData, err := os.ReadFile("./ai/data/outputs/id_list.json")
 	if err != nil {
 		return fmt.Errorf("failed to read from json file: %v", err.Error())
 	}

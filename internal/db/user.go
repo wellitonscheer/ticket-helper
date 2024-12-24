@@ -13,11 +13,11 @@ type UserService struct {
 	NewUser func(userName *string) error
 }
 
-var User = &UserService{NewUser}
+var User = &UserService{newUser}
 
 var userCollName string = "user"
 
-func NewUser(userName *string) error {
+func newUser(userName *string) error {
 	if userName == nil {
 		return errors.New("invalid user name")
 	}
