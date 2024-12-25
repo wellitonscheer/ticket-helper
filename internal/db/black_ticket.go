@@ -32,88 +32,61 @@ func (tm *BlackTicket) InsertAllTickets() error {
 		return fmt.Errorf("failed to check if collection exists: %v", err.Error())
 	}
 
-	if !collExists {
-		err = tm.CreateCollection()
+	if collExists {
+		err = tm.Milvus.c.DropCollection(tm.Milvus.ctx, tm.CollectionName)
 		if err != nil {
-			return fmt.Errorf("failed to create collection: %v", err.Error())
+			return fmt.Errorf("failed to drop collection: %v", err.Error())
 		}
 	}
 
-	rawData, err := os.ReadFile("./ai/data/outputs/id_list.json")
+	err = tm.CreateCollection()
+	if err != nil {
+		return fmt.Errorf("failed to create collection: %v", err.Error())
+	}
+
+	rawData, err := os.ReadFile("./data_source/black_tickets_content.json")
 	if err != nil {
 		return fmt.Errorf("failed to read from json file: %v", err.Error())
 	}
 
-	var jsonData TicketRawData
-	err = json.Unmarshal(rawData, &jsonData)
+	var blackTicketsContent []string
+	err = json.Unmarshal(rawData, &blackTicketsContent)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal raw ticket data: %v", err.Error())
+		return fmt.Errorf("failed to unmarshal black tickets content: %v", err.Error())
 	}
 
-	ticketsIds := []string{}
-	ticketMsgTypes := []string{}
-	ticketMsgPosters := []string{}
-	ticketMsgContents := []string{}
-	ticketMsgContentVector := [][]float32{}
-	for ticketId, ticketMessages := range jsonData {
-		fmt.Println("processing: ", ticketId)
-		for i, message := range ticketMessages {
-			if len(message.Body) > 65534 || len(message.Body) < 1 {
-				fmt.Println("ignored: ", ticketId)
-				continue
-			}
-
-			data := service.Input{
-				Inputs: []string{message.Body},
-			}
-			embeddedBodyMessage, err := service.GetTextEmbeddings(&data)
-			if err != nil {
-				return fmt.Errorf("failed to get embeddings: %v", err.Error())
-			}
-
-			if len(embeddedBodyMessage) > 1 {
-				fmt.Printf("embedded body message returned two vectors, ticketId: %s index: %d", ticketId, i)
-				fmt.Println("embedded body message: ", embeddedBodyMessage)
-				break
-			}
-
-			ticketsIds = append(ticketsIds, ticketId)
-			ticketMsgTypes = append(ticketMsgTypes, message.Type)
-			ticketMsgPosters = append(ticketMsgPosters, message.Poster)
-			ticketMsgContents = append(ticketMsgContents, message.Body)
-			ticketMsgContentVector = append(ticketMsgContentVector, embeddedBodyMessage...)
+	ticketContents := []string{}
+	ticketContentVector := [][]float32{}
+	for _, ticketContent := range blackTicketsContent {
+		if len(ticketContent) > 65534 || len(ticketContent) < 1 {
+			continue
 		}
-		fmt.Println("finished: ", ticketId)
-	}
-	fmt.Println("REALY INSERTING NOW!")
 
-	batchSize := 1000
-	for i := 0; i < len(ticketsIds); i += batchSize {
-		end := i + batchSize
-		if end > len(ticketsIds) {
-			end = len(ticketsIds)
+		data := service.Input{
+			Inputs: []string{ticketContent},
 		}
-		fmt.Println(i, " to ", end)
-
-		ticketIdBatch := ticketsIds[i:end]
-		ticketMsgTypesBatch := ticketMsgTypes[i:end]
-		ticketMsgPostersBatch := ticketMsgPosters[i:end]
-		ticketMsgContentBatch := ticketMsgContents[i:end]
-		ticketMsgContentVecBatch := ticketMsgContentVector[i:end]
-
-		ticketIdColumn := entity.NewColumnVarChar("ticketId", ticketIdBatch)
-		ticketMsgTypeColumn := entity.NewColumnVarChar("type", ticketMsgTypesBatch)
-		ticketMsgPosterColumn := entity.NewColumnVarChar("poster", ticketMsgPostersBatch)
-		ticketMsgContentColumn := entity.NewColumnVarChar("ticketMessageContent", ticketMsgContentBatch)
-		ticketMsgContentVecColumn := entity.NewColumnFloatVector("ticketMessageContentVector", 1024, ticketMsgContentVecBatch)
-
-		_, err = tm.Milvus.c.Insert(tm.Milvus.ctx, tm.CollectionName, "", ticketIdColumn, ticketMsgTypeColumn, ticketMsgPosterColumn, ticketMsgContentColumn, ticketMsgContentVecColumn)
+		embeddedContent, err := service.GetTextEmbeddings(&data)
 		if err != nil {
-			return fmt.Errorf("failed to insert tickets: %v", err.Error())
+			return fmt.Errorf("failed to get embeddings: %v", err.Error())
 		}
+
+		if len(embeddedContent) > 1 {
+			fmt.Printf("embedded black ticket content returned two vectors, content: %s", ticketContent)
+			fmt.Println("embedded ticket content: ", embeddedContent)
+			break
+		}
+
+		ticketContents = append(ticketContents, ticketContent)
+		ticketContentVector = append(ticketContentVector, embeddedContent...)
 	}
 
-	fmt.Println("DONE inserting...")
+	ticketContentColumn := entity.NewColumnVarChar("ticketContent", ticketContents)
+	ticketContentVecColumn := entity.NewColumnFloatVector("ticketContentVector", 1024, ticketContentVector)
+
+	_, err = tm.Milvus.c.Insert(tm.Milvus.ctx, tm.CollectionName, "", ticketContentColumn, ticketContentVecColumn)
+	if err != nil {
+		return fmt.Errorf("failed to insert tickets: %v", err.Error())
+	}
 
 	err = tm.Milvus.c.Flush(tm.Milvus.ctx, tm.CollectionName, false)
 	if err != nil {
@@ -141,34 +114,7 @@ func (tm *BlackTicket) CreateCollection() error {
 				AutoID:     true,
 			},
 			{
-				Name:     "ticketId",
-				DataType: entity.FieldTypeVarChar,
-				TypeParams: map[string]string{
-					entity.TypeParamMaxLength: "20",
-				},
-				PrimaryKey: false,
-				AutoID:     false,
-			},
-			{
-				Name:     "type",
-				DataType: entity.FieldTypeVarChar,
-				TypeParams: map[string]string{
-					entity.TypeParamMaxLength: "20",
-				},
-				PrimaryKey: false,
-				AutoID:     false,
-			},
-			{
-				Name:     "poster",
-				DataType: entity.FieldTypeVarChar,
-				TypeParams: map[string]string{
-					entity.TypeParamMaxLength: "1000",
-				},
-				PrimaryKey: false,
-				AutoID:     false,
-			},
-			{
-				Name:     "ticketMessageContent",
+				Name:     "ticketContent",
 				DataType: entity.FieldTypeVarChar,
 				TypeParams: map[string]string{
 					entity.TypeParamMaxLength: "65534",
@@ -177,7 +123,7 @@ func (tm *BlackTicket) CreateCollection() error {
 				AutoID:     false,
 			},
 			{
-				Name:     "ticketMessageContentVector",
+				Name:     "ticketContentVector",
 				DataType: entity.FieldTypeFloatVector,
 				TypeParams: map[string]string{
 					entity.TypeParamDim: "1024",
@@ -198,7 +144,7 @@ func (tm *BlackTicket) CreateCollection() error {
 		return fmt.Errorf("fail to create ivf flat index: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.CreateIndex(tm.Milvus.ctx, tm.CollectionName, "ticketMessageContentVector", idx, false)
+	err = tm.Milvus.c.CreateIndex(tm.Milvus.ctx, tm.CollectionName, "ticketContentVector", idx, false)
 	if err != nil {
 		return fmt.Errorf("fail to create index: %v", err.Error())
 	}

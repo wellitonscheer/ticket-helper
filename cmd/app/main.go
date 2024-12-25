@@ -33,5 +33,7 @@ func main() {
 
 	r.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
 
+	r.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
+
 	r.Run(fmt.Sprintf(":%s", ginPort))
 }

@@ -2,6 +2,8 @@
 
 tmp
 
+data_source/black_tickets_content.json
+
 # dados pra treinamento, são muito grande
 ai/data/inputs/*
 ai/data/outputs/*
