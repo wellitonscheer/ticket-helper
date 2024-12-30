@@ -1,22 +1,72 @@
 {{ block "index" . }}
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <script
-      src="https://unpkg.com/htmx.org@2.0.4"
-      integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
-      crossorigin="anonymous"
-    ></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Document</title>
-  </head>
-  <body>
-    <div id="count">{{ template "count" .}}</div>
+  <script src="https://unpkg.com/htmx.org@2.0.4"
+    integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+    crossorigin="anonymous"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", (event) => {
+      document.body.addEventListener("htmx:beforeSwap", function (evt) {
+        if (evt.detail.xhr.status === 422) {
+          evt.detail.shouldSwap = true
+          evt.detail.isError = false
+        }
+      })
+    })
+
+  </script>
+
+  <title>Document</title>
+</head>
+
+<body>
+  <div>
+    <div id="count">{{ template "count" .Data }}</div>
 
     <button hx-target="#count" hx-post="/count">Count</button>
-  </body>
+  </div>
+  <br />
+  <div>
+    {{ template "form" .Form }}
+    <hr />
+    {{ template "display" .Data }}
+  </div>
+</body>
+
 </html>
-{{ end }} {{ block "count" .}} Count {{ .Count }} {{ end }}
+{{ end }}
+
+<!-- contact form -->
+{{ block "form" . }}
+<form hx-swap="outerHTML" hx-post="contacts">
+  name:
+  <input {{ if .Values.name }} value="{{ .Values.name }}" {{ end }} type="text" name="name" id="name" />
+  email:
+  <input {{ if .Values.email }} value="{{ .Values.email }}" {{ end }} type="text" name="email" id="email" />
+
+  {{ if .Errors.email }}
+  <div style="color: red;">
+    {{ .Errors.email}}
+  </div>
+  {{ end }}
+  <button type="submit">Create Contact</button>
+</form>
+{{ end }}
+
+<!-- display contacts -->
+{{ block "display" .}}
+<div id="display" style="display: flex; flex-direction: column">
+  {{ range .Contacts }}
+  <div>Name: <span>{{ .Name }}</span> Email: <span>{{ .Email }}</span></div>
+  {{ end }}
+</div>
+{{ end }}
+
+<!-- count -->
+{{ block "count" .}} Count {{ .Count }} {{ end }}

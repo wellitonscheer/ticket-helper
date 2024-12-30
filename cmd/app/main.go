@@ -23,8 +23,8 @@ func main() {
 	r.LoadHTMLGlob("templates/*.html")
 
 	r.GET("/", handlers.Index)
-
 	r.POST("/count", handlers.IndexCount)
+	r.POST("/contacts", handlers.IndexCreateContact)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
