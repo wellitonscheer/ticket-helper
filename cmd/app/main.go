@@ -20,11 +20,13 @@ func main() {
 
 	r := gin.Default()
 
-	r.LoadHTMLGlob("templates/*.html")
+	r.LoadHTMLGlob("web/templates/*.html")
+	r.Static("/web/static", "./web/static")
 
 	r.GET("/", handlers.Index)
 	r.POST("/count", handlers.IndexCount)
 	r.POST("/contacts", handlers.IndexCreateContact)
+	r.DELETE("/contacts/:id", handlers.IndexDeleteContact)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
