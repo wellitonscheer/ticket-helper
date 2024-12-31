@@ -24,9 +24,16 @@ func main() {
 	r.Static("/web/static", "./web/static")
 
 	r.GET("/", handlers.Index)
-	r.POST("/count", handlers.IndexCount)
-	r.POST("/contacts", handlers.IndexCreateContact)
-	r.DELETE("/contacts/:id", handlers.IndexDeleteContact)
+
+	learn := r.Group("/learn")
+	{
+		learnHandlers := handlers.NewLearnHandlers()
+
+		learn.GET("/", learnHandlers.Learn)
+		learn.POST("/count", learnHandlers.Count)
+		learn.POST("/contacts", learnHandlers.CreateContact)
+		learn.DELETE("/contacts/:id", learnHandlers.DeleteContact)
+	}
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -37,7 +44,7 @@ func main() {
 	r.GET("/user/:name", handlers.UserNew)
 
 	r.GET("/tickets", handlers.TicketInsertAll)
-	r.GET("/tickets/search/:input", handlers.TicketVectorSearch)
+	r.POST("/tickets/search", handlers.TicketVectorSearch)
 
 	r.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
 

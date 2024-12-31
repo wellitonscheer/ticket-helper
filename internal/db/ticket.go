@@ -10,9 +10,16 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/service"
 )
 
+type TicketSearchResult struct {
+	TicketId string
+	Score    float32
+}
+
+type TicketSearchResults = []TicketSearchResult
+
 type TicketService struct {
 	InsertAllTickets func() error
-	VectorSearch     func(search *string) (string, error)
+	VectorSearch     func(search *string) (TicketSearchResults, error)
 }
 
 var Ticket = &TicketService{
@@ -139,21 +146,21 @@ func insertAllTickets() error {
 	return nil
 }
 
-func vectorSearch(search *string) (string, error) {
+func vectorSearch(search *string) (TicketSearchResults, error) {
 	if search == nil {
-		return "", errors.New("invalid search value")
+		return nil, errors.New("invalid search value")
 	}
 	milvus, err := getMilvusInstance()
 	if err != nil {
-		return "", fmt.Errorf("failed to connect to milvus: %v", err.Error())
+		return nil, fmt.Errorf("failed to connect to milvus: %v", err.Error())
 	}
 
 	hasColl, err := milvus.c.HasCollection(milvus.ctx, ticketCollName)
 	if err != nil {
-		return "", fmt.Errorf("failed to check if has collection")
+		return nil, fmt.Errorf("failed to check if has collection")
 	}
 	if !hasColl {
-		return "", fmt.Errorf("'%s' collection doesnt exist", ticketCollName)
+		return nil, fmt.Errorf("'%s' collection doesnt exist", ticketCollName)
 	}
 
 	embedInput := service.Input{
@@ -161,20 +168,20 @@ func vectorSearch(search *string) (string, error) {
 	}
 	searchEmbedding, err := service.GetTextEmbeddings(&embedInput)
 	if err != nil {
-		return "", fmt.Errorf("failed to get search embeddings: %v", err.Error())
+		return nil, fmt.Errorf("failed to get search embeddings: %v", err.Error())
 	}
 
 	vector := entity.FloatVector(searchEmbedding[0])
 	sp, err := entity.NewIndexFlatSearchParam()
 	if err != nil {
-		return "", fmt.Errorf("failed to create new index flat search param: %v", err.Error())
+		return nil, fmt.Errorf("failed to create new index flat search param: %v", err.Error())
 	}
 	searchResults, err := milvus.c.Search(milvus.ctx, ticketCollName, nil, "", []string{"ticketId"}, []entity.Vector{vector}, "ticketContentVector", entity.COSINE, 20, sp)
 	if err != nil {
-		return "", fmt.Errorf("failed to search ticket: %v", err.Error())
+		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
 	}
 
-	var ticketsIds []string
+	var ticketsResult TicketSearchResults
 	for _, result := range searchResults {
 		for _, field := range result.Fields {
 			var ticketIdColumn *entity.ColumnVarChar
@@ -186,14 +193,18 @@ func vectorSearch(search *string) (string, error) {
 			}
 
 			if ticketIdColumn == nil {
-				return "", errors.New("result field not match")
+				return nil, errors.New("result field not match")
 			}
 
-			ticketsIds = ticketIdColumn.Data()
+			ticketsIds := ticketIdColumn.Data()
+
+			for i, score := range result.Scores {
+				ticketsResult = append(ticketsResult, TicketSearchResult{TicketId: ticketsIds[i], Score: score})
+			}
 		}
 	}
 
-	return fmt.Sprint(ticketsIds), nil
+	return ticketsResult, nil
 }
 
 func createTicketCollection() error {

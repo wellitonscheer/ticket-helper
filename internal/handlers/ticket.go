@@ -19,12 +19,14 @@ func TicketInsertAll(c *gin.Context) {
 }
 
 func TicketVectorSearch(c *gin.Context) {
-	searchInput := c.Params.ByName("input")
+	searchInput := c.PostForm("search-input")
+	searchType := c.PostForm("search-type")
+	fmt.Printf("input: %s, type: %s", searchInput, searchType)
 	tickets, err := db.Ticket.VectorSearch(&searchInput)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "tickets": tickets})
+	c.HTML(http.StatusOK, "results", tickets)
 }
