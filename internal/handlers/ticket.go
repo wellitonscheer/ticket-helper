@@ -41,8 +41,7 @@ func TicketVectorSearch(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
 			return
 		}
-	}
-	if searchType == "message" {
+	} else if searchType == "message" {
 		ticketMessage, err := db.NewTicketMessage()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
@@ -54,6 +53,9 @@ func TicketVectorSearch(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search message ticket: %s", err.Error())})
 			return
 		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search type"})
+		return
 	}
 
 	c.HTML(http.StatusOK, "results", tickets)
