@@ -25,19 +25,35 @@ func TicketInsertAll(c *gin.Context) {
 }
 
 func TicketVectorSearch(c *gin.Context) {
-	ticketService, err := db.NewTicketService()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
-		return
-	}
-
 	searchInput := c.PostForm("search-input")
-	_ = c.PostForm("search-type")
+	searchType := c.PostForm("search-type")
 
-	tickets, err := ticketService.VectorSearch(&searchInput)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
-		return
+	var tickets db.TicketSearchResults
+	if searchType == "entire" {
+		ticketService, err := db.NewTicketService()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
+			return
+		}
+
+		tickets, err = ticketService.VectorSearch(&searchInput)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
+			return
+		}
+	}
+	if searchType == "message" {
+		ticketMessage, err := db.NewTicketMessage()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
+			return
+		}
+
+		tickets, err = ticketMessage.VectorSearch(&searchInput)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search message ticket: %s", err.Error())})
+			return
+		}
 	}
 
 	c.HTML(http.StatusOK, "results", tickets)
