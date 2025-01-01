@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -136,6 +137,63 @@ func (tm *TicketMessage) InsertAllTickets() error {
 	}
 
 	return nil
+}
+
+func (tm *TicketMessage) VectorSearch(search *string) (TicketSearchResults, error) {
+	if search == nil {
+		return nil, errors.New("invalid search value")
+	}
+
+	hasColl, err := tm.Milvus.c.HasCollection(tm.Milvus.ctx, tm.CollectionName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if has collection")
+	}
+	if !hasColl {
+		return nil, fmt.Errorf("'%s' collection doesnt exist", tm.CollectionName)
+	}
+
+	embedInput := service.Input{
+		Inputs: []string{*search},
+	}
+	searchEmbedding, err := service.GetTextEmbeddings(&embedInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get search embeddings: %v", err.Error())
+	}
+
+	vector := entity.FloatVector(searchEmbedding[0])
+	sp, err := entity.NewIndexFlatSearchParam()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new index flat search param: %v", err.Error())
+	}
+	searchResults, err := tm.Milvus.c.Search(tm.Milvus.ctx, tm.CollectionName, nil, "", []string{"ticketId"}, []entity.Vector{vector}, "ticketMessageContentVector", entity.COSINE, 20, sp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
+	}
+
+	var ticketsResult TicketSearchResults
+	for _, result := range searchResults {
+		for _, field := range result.Fields {
+			var ticketIdColumn *entity.ColumnVarChar
+			if field.Name() == "ticketId" {
+				c, ok := field.(*entity.ColumnVarChar)
+				if ok {
+					ticketIdColumn = c
+				}
+			}
+
+			if ticketIdColumn == nil {
+				return nil, errors.New("result field not match")
+			}
+
+			ticketsIds := ticketIdColumn.Data()
+
+			for i, score := range result.Scores {
+				ticketsResult = append(ticketsResult, TicketSearchResult{TicketId: ticketsIds[i], Score: score})
+			}
+		}
+	}
+
+	return ticketsResult, nil
 }
 
 func (tm *TicketMessage) CreateCollection() error {

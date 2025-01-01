@@ -9,7 +9,13 @@ import (
 )
 
 func TicketInsertAll(c *gin.Context) {
-	err := db.Ticket.InsertAllTickets()
+	ticketService, err := db.NewTicketService()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
+		return
+	}
+
+	err = ticketService.InsertAllTickets()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to insert tickets: %s", err.Error())})
 		return
@@ -19,12 +25,38 @@ func TicketInsertAll(c *gin.Context) {
 }
 
 func TicketVectorSearch(c *gin.Context) {
-	searchInput := c.Params.ByName("input")
-	tickets, err := db.Ticket.VectorSearch(&searchInput)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
+	searchInput := c.PostForm("search-input")
+	searchType := c.PostForm("search-type")
+
+	var tickets db.TicketSearchResults
+	if searchType == "entire" {
+		ticketService, err := db.NewTicketService()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
+			return
+		}
+
+		tickets, err = ticketService.VectorSearch(&searchInput)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
+			return
+		}
+	} else if searchType == "message" {
+		ticketMessage, err := db.NewTicketMessage()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
+			return
+		}
+
+		tickets, err = ticketMessage.VectorSearch(&searchInput)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search message ticket: %s", err.Error())})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search type"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "tickets": tickets})
+	c.HTML(http.StatusOK, "results", tickets)
 }
