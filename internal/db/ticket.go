@@ -87,6 +87,15 @@ func (t *TicketService) InsertAllTickets() error {
 			continue
 		}
 
+		isBlackListed, err := t.IsBlackListed(&fullBodyMessage)
+		if err != nil {
+			return fmt.Errorf("failed to check if content is black listed: %v", err.Error())
+		}
+
+		if isBlackListed {
+			continue
+		}
+
 		data := service.Input{
 			Inputs: []string{fullBodyMessage},
 		}
@@ -144,6 +153,48 @@ func (t *TicketService) InsertAllTickets() error {
 	}
 
 	return nil
+}
+
+func (t *TicketService) IsBlackListed(search *string) (bool, error) {
+	if search == nil {
+		return false, errors.New("invalid search value")
+	}
+
+	hasColl, err := t.Milvus.c.HasCollection(t.Milvus.ctx, "black_ticket")
+	if err != nil {
+		return false, fmt.Errorf("failed to check if has collection")
+	}
+	if !hasColl {
+		return false, fmt.Errorf("'%s' collection doesnt exist", "black_ticket")
+	}
+
+	embedInput := service.Input{
+		Inputs: []string{*search},
+	}
+	searchEmbedding, err := service.GetTextEmbeddings(&embedInput)
+	if err != nil {
+		return false, fmt.Errorf("failed to get search embeddings: %v", err.Error())
+	}
+
+	vector := entity.FloatVector(searchEmbedding[0])
+	sp, err := entity.NewIndexFlatSearchParam()
+	if err != nil {
+		return false, fmt.Errorf("failed to create new index flat search param: %v", err.Error())
+	}
+	searchResults, err := t.Milvus.c.Search(t.Milvus.ctx, "black_ticket", nil, "", []string{"id"}, []entity.Vector{vector}, "ticketContentVector", entity.COSINE, 1, sp)
+	if err != nil {
+		return false, fmt.Errorf("failed to search ticket: %v", err.Error())
+	}
+
+	for _, result := range searchResults {
+		for _, score := range result.Scores {
+			if score > float32(0.900000) {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func (t *TicketService) VectorSearch(search *string) (TicketSearchResults, error) {
