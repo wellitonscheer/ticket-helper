@@ -50,7 +50,7 @@ func (tm *TicketMessage) InsertAllTickets() error {
 		}
 	}
 
-	rawData, err := os.ReadFile("./ai/data/outputs/id_list.json")
+	rawData, err := os.ReadFile("./ai/data/outputs/id_list.jsona")
 	if err != nil {
 		return fmt.Errorf("failed to read from json file: %v", err.Error())
 	}

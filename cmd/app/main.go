@@ -50,5 +50,9 @@ func main() {
 
 	r.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 
+	r.GET("/kill", func(c *gin.Context) {
+		log.Fatal()
+	})
+
 	r.Run(fmt.Sprintf(":%s", ginPort))
 }

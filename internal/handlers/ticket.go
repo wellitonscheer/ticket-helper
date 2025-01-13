@@ -8,6 +8,11 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/db"
 )
 
+const (
+	entireTicketContent = "entire"
+	singleMessages      = "message"
+)
+
 func TicketInsertAll(c *gin.Context) {
 	ticketService, err := db.NewTicketService()
 	if err != nil {
@@ -29,7 +34,7 @@ func TicketVectorSearch(c *gin.Context) {
 	searchType := c.PostForm("search-type")
 
 	var tickets db.TicketSearchResults
-	if searchType == "entire" {
+	if searchType == entireTicketContent {
 		ticketService, err := db.NewTicketService()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
@@ -41,7 +46,7 @@ func TicketVectorSearch(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
 			return
 		}
-	} else if searchType == "message" {
+	} else if searchType == singleMessages {
 		ticketMessage, err := db.NewTicketMessage()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
