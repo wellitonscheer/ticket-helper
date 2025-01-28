@@ -1,11 +1,100 @@
 body {
-  font-family: Arial, sans-serif;
+  font-style: initial;
+  font-family: sans-serif;
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0;
+  width: 800px;
+  height: 200px;
+  z-index: 10;
+  position: relative;
+  background: linear-gradient(
+    45deg,
+    hwb(241 50% 6%),
+    hsl(0, 89%, 75%),
+    hwb(241 50% 6%),
+    hsl(0, 89%, 75%),
+    hwb(241 50% 6%)
+  );
+  background-size: 800% 800%;
+  animation: fundo 100s infinite;
+}
+html {
+  position: relative;
+  z-index: 20;
+}
+@keyframes fundo {
+  0% {
+    background-position: 0% 50%;
+  }
+  70% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes stars {
+  from {
+    transform: translateY(0px);
+  }
+  to {
+    transform: translateY(-800px);
+  }
+}
+
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 800%;
+  height: 800vh;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.stars {
+  position: absolute;
+  width: 400%;
+  height: 400%;
+  top: 0;
+  left: 0;
+  background-image: radial-gradient(1px 1px at 10px 20px, white, transparent),
+    radial-gradient(2px 2px at 150px 200px, white, transparent),
+    radial-gradient(3px 3px at 300px 400px, white, transparent),
+    radial-gradient(1px 1px at 500px 600px, white, transparent),
+    radial-gradient(2px 2px at 700px 300px, white, transparent),
+    radial-gradient(3px 3px at 900px 100px, white, transparent),
+    radial-gradient(1px 1px at 1100px 700px, white, transparent),
+    radial-gradient(2px 2px at 150px 800px, white, transparent),
+    radial-gradient(3px 3px at 400px 500px, white, transparent),
+    radial-gradient(1px 1px at 800px 200px, white, transparent),
+    radial-gradient(2px 2px at 600px 300px, white, transparent),
+    radial-gradient(3px 3px at 1200px 400px, white, transparent),
+    radial-gradient(1px 1px at 1400px 100px, white, transparent),
+    radial-gradient(2px 2px at 1600px 500px, white, transparent),
+    radial-gradient(3px 3px at 1800px 700px, white, transparent),
+    radial-gradient(2px 2px at 1900px 800px, white, transparent),
+    radial-gradient(1px 1px at 1750px 300px, white, transparent),
+    radial-gradient(2px 2px at 1650px 100px, white, transparent),
+    radial-gradient(3px 3px at 1450px 600px, white, transparent),
+    radial-gradient(1px 1px at 1550px 700px, white, transparent),
+    radial-gradient(2px 2px at 1350px 200px, white, transparent),
+    radial-gradient(3px 3px at 1150px 400px, white, transparent),
+    radial-gradient(1px 1px at 950px 600px, white, transparent),
+    radial-gradient(2px 2px at 750px 800px, white, transparent),
+    radial-gradient(3px 3px at 550px 300px, white, transparent),
+    radial-gradient(2px 2px at 350px 100px, white, transparent),
+    radial-gradient(1px 1px at 250px 400px, white, transparent),
+    radial-gradient(2px 2px at 50px 700px, white, transparent),
+    radial-gradient(3px 3px at 1250px 800px, white, transparent),
+    radial-gradient(1px 1px at 1700px 100px, white, transparent);
+  background-repeat: repeat;
+  z-index: -1;
+  background-size: 1900px 800px; /* Ajuste conforme necessário */
+  animation: stars 20s linear infinite;
 }
 
 .search-container {
+  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -23,7 +112,7 @@ textarea {
   height: 100px;
   padding: 10px;
   font-size: 16px;
-  border: 1px solid #ccc;
+  border: 1px solid #000000;
   border-radius: 4px;
 }
 
@@ -60,6 +149,7 @@ ul {
 }
 
 li {
+  z-index: 10;
   background-color: #f8f9fa;
   margin-bottom: 10px;
   padding: 15px;

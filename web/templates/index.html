@@ -15,8 +15,8 @@
 <body>
     <h1>Pesquisar pelo ticket</h1>
     <div class="search-container">
-        <label for="search-input">Digite sua busca:</label>
-        <textarea id="search-input" name="search-input" placeholder="Digite aqui sua pesquisa."></textarea>
+        <label for="search-input">Descrição do ticket:</label>
+        <textarea id="search-input" name="search-input" placeholder="..."></textarea>
         <div class="button-group">
             <select id="search-type" name="search-type">
                 <option value="entire">Conteúdo Ticket</option>
@@ -32,6 +32,11 @@
         {{ template "results" .}}
     </ul>
 </body>
+
+<div class="container">
+    <div class="stars"></div>
+    <div class="stars2"></div>
+</div>
 
 </html>
 {{ end }}
