@@ -44,7 +44,7 @@ func (tm *BlackTicket) InsertAllTickets() error {
 		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
 
-	rawData, err := os.ReadFile("./data_source/black_tickets_content.json")
+	rawData, err := os.ReadFile("./data_source/black_tickets_content.jsona")
 	if err != nil {
 		return fmt.Errorf("failed to read from json file: %v", err.Error())
 	}

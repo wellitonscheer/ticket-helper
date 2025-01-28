@@ -15,40 +15,22 @@
 <body>
     <h1>Pesquisar pelo ticket</h1>
     <div class="search-container">
-        <select id="search-type" name="search-type">
-            <option value="entire">Completo</option>
-            <option value="message">Mensagem</option>
-        </select>
-        <input type="text" id="search-input" name="search-input" placeholder="Digite aqui sua pesquisa.">
-        <button hx-post="/tickets/search" hx-trigger="click" hx-target="#results"
-            hx-include="[id='search-type'],[id='search-input']">
-            Pesquisar
-        </button>
+        <label for="search-input">Digite sua busca:</label>
+        <textarea id="search-input" name="search-input" placeholder="Digite aqui sua pesquisa."></textarea>
+        <div class="button-group">
+            <select id="search-type" name="search-type">
+                <option value="entire">Conteúdo Ticket</option>
+                <option value="message">Única Mensagem</option>
+            </select>
+            <button hx-post="/tickets/search" hx-trigger="click" hx-target="#results"
+                hx-include="[id='search-type'],[id='search-input']">
+                Pesquisar
+            </button>
+        </div>
     </div>
     <ul id="results">
-        <li>
-            <span class="result-number">#94989</span>
-            <a href="https://example.com/web/search-query/94989" class="result-url"
-                target="_blank">https://example.com/web/search-query/94989</a>
-            <span class="result-score">0.8955</span>
-        </li>
         {{ template "results" .}}
     </ul>
-
-    <script>
-        htmx.on("htmx:configRequest", (event) => {
-            event.detail.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        });
-
-        htmx.onLoad(function (content) {
-            document.body.addEventListener("htmx:afterRequest", function (evt) {
-                if (evt.detail.elt.id === "results") {
-                    evt.detail.elt.innerHTML = '<li>No results found. This is a static example.</li>';
-                }
-            });
-        });
-
-    </script>
 </body>
 
 </html>
