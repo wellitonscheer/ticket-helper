@@ -1,14 +1,5 @@
 body {
-  font-style: initial;
-  font-family: sans-serif;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0;
-  width: 800px;
-  height: 200px;
-  z-index: 10;
-  position: relative;
-  background: linear-gradient(
+  background-image: linear-gradient(
     45deg,
     hwb(241 50% 6%),
     hsl(0, 89%, 75%),
@@ -16,13 +7,9 @@ body {
     hsl(0, 89%, 75%),
     hwb(241 50% 6%)
   );
-  background-size: 800% 800%;
-  animation: fundo 100s infinite;
+  animation: fundo 10s infinite;
 }
-html {
-  position: relative;
-  z-index: 20;
-}
+
 @keyframes fundo {
   0% {
     background-position: 0% 50%;
@@ -32,65 +19,45 @@ html {
   }
 }
 
-@keyframes stars {
-  from {
-    transform: translateY(0px);
-  }
-  to {
-    transform: translateY(-800px);
-  }
+.search {
+  font-style: initial;
+  font-family: sans-serif;
+  z-index: 10;
 }
 
-.container {
+.estrelas {
   position: fixed;
   top: 0;
-  left: 0;
-  width: 800%;
-  height: 800vh;
-  overflow: hidden;
+  width: 100%;
+  height: 150%;
   z-index: -1;
 }
 
 .stars {
-  position: absolute;
-  width: 400%;
-  height: 400%;
-  top: 0;
-  left: 0;
-  background-image: radial-gradient(1px 1px at 10px 20px, white, transparent),
-    radial-gradient(2px 2px at 150px 200px, white, transparent),
-    radial-gradient(3px 3px at 300px 400px, white, transparent),
-    radial-gradient(1px 1px at 500px 600px, white, transparent),
-    radial-gradient(2px 2px at 700px 300px, white, transparent),
-    radial-gradient(3px 3px at 900px 100px, white, transparent),
-    radial-gradient(1px 1px at 1100px 700px, white, transparent),
-    radial-gradient(2px 2px at 150px 800px, white, transparent),
-    radial-gradient(3px 3px at 400px 500px, white, transparent),
-    radial-gradient(1px 1px at 800px 200px, white, transparent),
-    radial-gradient(2px 2px at 600px 300px, white, transparent),
-    radial-gradient(3px 3px at 1200px 400px, white, transparent),
-    radial-gradient(1px 1px at 1400px 100px, white, transparent),
-    radial-gradient(2px 2px at 1600px 500px, white, transparent),
-    radial-gradient(3px 3px at 1800px 700px, white, transparent),
-    radial-gradient(2px 2px at 1900px 800px, white, transparent),
-    radial-gradient(1px 1px at 1750px 300px, white, transparent),
-    radial-gradient(2px 2px at 1650px 100px, white, transparent),
-    radial-gradient(3px 3px at 1450px 600px, white, transparent),
-    radial-gradient(1px 1px at 1550px 700px, white, transparent),
-    radial-gradient(2px 2px at 1350px 200px, white, transparent),
-    radial-gradient(3px 3px at 1150px 400px, white, transparent),
-    radial-gradient(1px 1px at 950px 600px, white, transparent),
-    radial-gradient(2px 2px at 750px 800px, white, transparent),
-    radial-gradient(3px 3px at 550px 300px, white, transparent),
-    radial-gradient(2px 2px at 350px 100px, white, transparent),
-    radial-gradient(1px 1px at 250px 400px, white, transparent),
-    radial-gradient(2px 2px at 50px 700px, white, transparent),
-    radial-gradient(3px 3px at 1250px 800px, white, transparent),
-    radial-gradient(1px 1px at 1700px 100px, white, transparent);
-  background-repeat: repeat;
-  z-index: -1;
-  background-size: 1900px 800px; /* Ajuste conforme necessário */
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(2px 2px at 482px 385px, white, transparent),
+    radial-gradient(4px 4px at 210px 306px, white, transparent),
+    radial-gradient(2px 2px at 429px 471px, white, transparent),
+    radial-gradient(1px 1px at 233px 67px, white, transparent),
+    radial-gradient(1px 1px at 102px 221px, white, transparent),
+    radial-gradient(3px 3px at 234px 96px, white, transparent),
+    radial-gradient(2px 2px at 76px 152px, white, transparent),
+    radial-gradient(1px 1px at 391px 139px, white, transparent),
+    radial-gradient(2px 2px at 375px 209px, white, transparent),
+    radial-gradient(2px 2px at 236px 366px, white, transparent),
+    radial-gradient(2px 2px at 356px 446px, white, transparent);
+  background-size: 500px 500px;
   animation: stars 20s linear infinite;
+}
+
+@keyframes stars {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-500px);
+  }
 }
 
 .search-container {
@@ -173,4 +140,215 @@ li {
 .result-score {
   float: right;
   color: #28a745;
+}
+
+.gato-flutuando {
+  /* position: absolute; */
+  /* transform: translate(-50%, -50%); */
+  /* bottom: 10;
+  left: 50%; */
+  /* animation: flutuando 25s linear infinite; */
+  z-index: 50;
+}
+
+@keyframes flutuando {
+  from {
+    transform: translateX(1350px);
+  }
+
+  to {
+    transform: translateX(-800px);
+  }
+}
+
+.cat {
+  background-color: #757472;
+  height: 65px;
+  width: 80px;
+  border-radius: 0 80px 80px 0;
+  /* position: relative;
+  bottom: -118px;
+  left: 150px; */
+}
+
+.ear {
+  height: 15px;
+  width: 15px;
+  background-color: #474747;
+
+  /* position: relative; */
+  border-radius: 20px 0 0 0;
+  box-shadow: 25px 0 #474747;
+  /* left: 170px;
+  bottom: -39px;
+  transform-origin: bottom right; */
+}
+
+.eye,
+.eye:before {
+  height: 7px;
+  width: 10px;
+  border: 2px solid #2c2c2c;
+  /* position: absolute;
+  border-radius: 0 0 15px 15px;
+  border-top: none; */
+}
+
+.eye {
+  /* left: 180px;
+  bottom: -50px; */
+}
+
+.eye:before {
+  content: "";
+  left: 30px;
+}
+
+.nose {
+  background-color: #ffffff;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  /* position: relative;
+  bottom: -60px;
+  left: 190px; */
+  box-shadow: 12px 0 #ffffff;
+}
+
+.body {
+  background-color: #7c7c7c;
+  height: 90px;
+  width: 140px;
+  /* position: absolute;
+  left: 38px;
+  bottom: -10; */
+  border-radius: 60px 60px 0 0;
+  /* animation: sleep 2s infinite; */
+  transform-origin: bottom right;
+}
+
+@keyframes sleep {
+  50% {
+    transform: scale(0.9, 1.05);
+  }
+}
+
+.tail {
+  background-color: #7c7c7c;
+  height: 20px;
+  width: 100px;
+  /* position: absolute;
+  left: 5px;
+  bottom: -89px; */
+  border-radius: 20px 0 0 20px;
+}
+
+.bubble {
+  height: 20px;
+  width: 20px;
+  background-color: rgba(255, 255, 255, 0.4);
+  /* position: absolute;
+  left: 250px;
+  bottom: -30px; */
+  border-radius: 50px 50px 50px 5px;
+  /* animation: bubble-scale 2s infinite; */
+}
+
+@keyframes bubble-scale {
+  50% {
+    transform: scale(1.6);
+  }
+}
+
+@keyframes bubble-shadow {
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes shadow {
+  50% {
+    transform: scaleX(0.7);
+  }
+}
+
+.shadowa {
+  height: 80px;
+  width: 270px;
+  background-color: white;
+  border-radius: 50px;
+  /* position: absolute;
+  bottom: -205px;
+  left: 0px; */
+  z-index: -20;
+}
+.shadowaa {
+  height: 100px;
+  width: 100px;
+  background-color: #ffffff;
+  border-radius: 50px;
+  /* position: absolute;
+  bottom: -280px;
+  left: 10px; */
+  z-index: -20;
+}
+.shadowaaa {
+  height: 100px;
+  width: 100px;
+  background-color: #ffffff;
+  border-radius: 80px;
+  /* position: absolute;
+  bottom: -280px;
+  left: 81px; */
+  z-index: -20;
+}
+.shadowaaaa {
+  height: 100px;
+  width: 100px;
+  background-color: #ffffff;
+  border-radius: 50px;
+  /* position: absolute;
+  bottom: -280px;
+  left: 150px; */
+  z-index: -20;
+}
+
+.shadow1 {
+  height: 100px;
+  width: 100px;
+  background-color: #ffffff;
+  border-radius: 50px;
+  /* position: absolute;
+  bottom: -145px;
+  left: 150px; */
+  z-index: -20;
+}
+
+.shadow2 {
+  height: 100px;
+  width: 100px;
+  background-color: #ffffff;
+  border-radius: 50px;
+  /* position: absolute;
+  bottom: -145px;
+  left: 81px; */
+  z-index: -20;
+}
+
+.shadow {
+  height: 100px;
+  width: 100px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50px;
+  /* position: absolute;
+  bottom: -145px;
+  left: 10px; */
+  z-index: -20;
+  /* animation: bubble-shadow 3s infinite; */
+}
+
+.nuvem {
+  /* position: absolute;
+  bottom: -180px;
+  left: 65px; */
 }
