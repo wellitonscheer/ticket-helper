@@ -127,6 +127,7 @@ select {
 
 .results {
   min-width: 45%;
+  max-width: 92%;
 }
 
 ul {
@@ -164,8 +165,8 @@ li {
 .gato-flutuando {
   position: fixed;
   bottom: 100px;
-  left: 0;
-  height: 200px;
+  left: 50px;
+  height: 100px;
   width: 222px;
   /* animation: flutuando 25s linear infinite; */
   z-index: 50;
@@ -173,11 +174,11 @@ li {
 
 @keyframes flutuando {
   from {
-    transform: translateX(70vw);
+    transform: translateX(120vw);
   }
 
   to {
-    transform: translateX(-70vw);
+    transform: translateX(-30vw);
   }
 }
 
@@ -284,98 +285,148 @@ li {
   bottom: 0;
 }
 
-@keyframes bubble-shadow {
-  50% {
-    transform: scale(1.2);
-  }
-}
-
 @keyframes shadow {
   50% {
     transform: scaleX(0.7);
   }
 }
 
-.shadowa {
-  height: 80px;
-  width: 270px;
-  background-color: white;
-  border-radius: 50px;
-  /* position: absolute;
-  bottom: -205px;
-  left: 0px; */
-  z-index: -20;
-}
-.shadowaa {
-  height: 100px;
-  width: 100px;
-  background-color: #ffffff;
-  border-radius: 50px;
-  /* position: absolute;
-  bottom: -280px;
-  left: 10px; */
-  z-index: -20;
-}
-.shadowaaa {
-  height: 100px;
-  width: 100px;
-  background-color: #ffffff;
-  border-radius: 80px;
-  /* position: absolute;
-  bottom: -280px;
-  left: 81px; */
-  z-index: -20;
-}
-.shadowaaaa {
-  height: 100px;
-  width: 100px;
-  background-color: #ffffff;
-  border-radius: 50px;
-  /* position: absolute;
-  bottom: -280px;
-  left: 150px; */
-  z-index: -20;
-}
-
-.shadow1 {
-  height: 100px;
-  width: 100px;
-  background-color: #ffffff;
-  border-radius: 50px;
-  /* position: absolute;
-  bottom: -145px;
-  left: 150px; */
-  z-index: -20;
-}
-
-.shadow2 {
-  height: 100px;
-  width: 100px;
-  background-color: #ffffff;
-  border-radius: 50px;
-  /* position: absolute;
-  bottom: -145px;
-  left: 81px; */
-  z-index: -20;
-}
-
-.shadow {
-  height: 100px;
-  width: 100px;
-  background-color: rgba(255, 255, 255, 0.7);
-  border-radius: 50px;
-  /* position: absolute;
-  bottom: -145px;
-  left: 10px; */
-  z-index: -20;
-  /* animation: bubble-shadow 3s infinite; */
-}
-
 .nuvem {
   position: absolute;
-  /* bottom: -180px;
-  left: 65px; */
-  visibility: hidden;
+  bottom: 50%;
+  left: 50%;
+}
+
+.atras1 {
+  height: 100px;
+  width: 100px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -50px;
+  left: -30px;
+  animation: bubble-shadow1 4s infinite;
+  z-index: -20;
+}
+
+@keyframes bubble-shadow1 {
+  50% {
+    transform: scale(0.9);
+  }
+}
+
+@keyframes bubble-shadow2 {
+  50% {
+    transform: scale(0.92);
+  }
+}
+
+@keyframes bubble-shadow3 {
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bubble-shadow4 {
+  50% {
+    transform: scale(0.95);
+  }
+}
+
+.atras2 {
+  height: 100px;
+  width: 100px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -60px;
+  left: 10px;
+  animation: bubble-shadow1 6s infinite;
+  z-index: -20;
+}
+
+.atras3 {
+  height: 100px;
+  width: 100px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -50px;
+  left: -70px;
+  animation: bubble-shadow3 6s infinite;
+  z-index: -20;
+}
+
+.atras-encima-rabo {
+  height: 80px;
+  width: 80px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -45px;
+  left: -110px;
+  animation: bubble-shadow2 5s infinite;
+  z-index: -20;
+}
+
+.meio {
+  height: 70px;
+  width: 260px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -80px;
+  left: -135px;
+  animation: bubble-shadow4 10s infinite;
+  z-index: -20;
+}
+
+.frente1 {
+  height: 80px;
+  width: 80px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -120px;
+  left: -120px;
+  z-index: 100;
+  animation: bubble-shadow1 5s infinite;
+}
+
+.frente2 {
+  height: 80px;
+  width: 80px;
+  background-color: white;
+  border-radius: 80px;
+  position: absolute;
+  bottom: -125px;
+  left: -70px;
+  z-index: 100;
+  animation: bubble-shado2 6s infinite;
+}
+
+.frente3 {
+  height: 80px;
+  width: 80px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -125px;
+  left: -20px;
+  z-index: 100;
+  animation: bubble-shadow4 8s infinite;
+}
+
+.frente4 {
+  height: 80px;
+  width: 80px;
+  background-color: white;
+  border-radius: 50px;
+  position: absolute;
+  bottom: -120px;
+  left: 30px;
+  z-index: 100;
+  animation: bubble-shadow2 5s infinite;
 }
 
 @media screen and (max-width: 600px) {
