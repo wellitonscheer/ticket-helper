@@ -1,5 +1,10 @@
 body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   min-height: 100vh;
+  min-width: 100vw;
   overflow-x: hidden;
   background-image: linear-gradient(
     45deg,
@@ -29,7 +34,6 @@ body {
   font-style: initial;
   font-family: sans-serif;
   z-index: 10;
-  margin: 0 auto;
   width: 60%;
   height: 400px;
 }
@@ -121,6 +125,10 @@ select {
   border-radius: 4px;
 }
 
+.results {
+  min-width: 45%;
+}
+
 ul {
   list-style-type: none;
   padding: 0;
@@ -154,65 +162,65 @@ li {
 }
 
 .gato-flutuando {
-  position: absolute;
-  /* transform: translate(-50%, -50%); */
-  /* bottom: 10;
-  left: 50%; */
+  position: fixed;
+  bottom: 100px;
+  left: 0;
+  height: 200px;
+  width: 222px;
   /* animation: flutuando 25s linear infinite; */
   z-index: 50;
 }
 
 @keyframes flutuando {
   from {
-    transform: translateX(1350px);
+    transform: translateX(70vw);
   }
 
   to {
-    transform: translateX(-800px);
+    transform: translateX(-70vw);
   }
 }
 
-.cat {
+.head {
   background-color: #757472;
   height: 65px;
   width: 80px;
   border-radius: 0 80px 80px 0;
-  /* position: relative;
-  bottom: -118px;
-  left: 150px; */
+  position: absolute;
+  bottom: 0;
+  right: 0;
 }
 
 .ear {
   height: 15px;
   width: 15px;
   background-color: #474747;
-
-  /* position: relative; */
   border-radius: 20px 0 0 0;
   box-shadow: 25px 0 #474747;
-  /* left: 170px;
-  bottom: -39px;
-  transform-origin: bottom right; */
+  position: absolute;
+
+  right: 42px;
+  bottom: 63px;
 }
 
-.eye,
-.eye:before {
-  height: 7px;
-  width: 10px;
-  border: 2px solid #2c2c2c;
-  /* position: absolute;
-  border-radius: 0 0 15px 15px;
-  border-top: none; */
+.eyes {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  gap: 18px;
+
+  bottom: 38px;
+  right: 2px;
 }
 
 .eye {
-  /* left: 180px;
-  bottom: -50px; */
-}
-
-.eye:before {
-  content: "";
-  left: 30px;
+  height: 7px;
+  width: 10px;
+  border: 2px solid #2c2c2c;
+  border-radius: 0 0 15px 15px;
+  border-top: none;
 }
 
 .nose {
@@ -220,22 +228,43 @@ li {
   height: 12px;
   width: 12px;
   border-radius: 50%;
-  /* position: relative;
-  bottom: -60px;
-  left: 190px; */
   box-shadow: 12px 0 #ffffff;
+  position: absolute;
+
+  bottom: 28px;
+  right: 26px;
+}
+
+.bubble {
+  height: 20px;
+  width: 20px;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 50px 50px 50px 5px;
+  position: absolute;
+  animation: bubble-scale 2s infinite;
+  transform-origin: bottom left;
+
+  right: -36px;
+  bottom: 56px;
+}
+
+@keyframes bubble-scale {
+  50% {
+    transform: scale(1.6);
+  }
 }
 
 .body {
   background-color: #7c7c7c;
   height: 90px;
   width: 140px;
-  /* position: absolute;
-  left: 38px;
-  bottom: -10; */
   border-radius: 60px 60px 0 0;
-  /* animation: sleep 2s infinite; */
+  position: absolute;
+  animation: sleep 2s infinite;
   transform-origin: bottom right;
+
+  right: 50px;
+  bottom: 0;
 }
 
 @keyframes sleep {
@@ -248,27 +277,11 @@ li {
   background-color: #7c7c7c;
   height: 20px;
   width: 100px;
-  /* position: absolute;
-  left: 5px;
-  bottom: -89px; */
   border-radius: 20px 0 0 20px;
-}
+  position: absolute;
 
-.bubble {
-  height: 20px;
-  width: 20px;
-  background-color: rgba(255, 255, 255, 0.4);
-  /* position: absolute;
-  left: 250px;
-  bottom: -30px; */
-  border-radius: 50px 50px 50px 5px;
-  /* animation: bubble-scale 2s infinite; */
-}
-
-@keyframes bubble-scale {
-  50% {
-    transform: scale(1.6);
-  }
+  left: 0;
+  bottom: 0;
 }
 
 @keyframes bubble-shadow {
@@ -359,9 +372,10 @@ li {
 }
 
 .nuvem {
-  /* position: absolute;
-  bottom: -180px;
+  position: absolute;
+  /* bottom: -180px;
   left: 65px; */
+  visibility: hidden;
 }
 
 @media screen and (max-width: 600px) {
