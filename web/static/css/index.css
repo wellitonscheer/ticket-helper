@@ -168,17 +168,39 @@ li {
   left: 50px;
   height: 100px;
   width: 222px;
-  /* animation: flutuando 25s linear infinite; */
+  animation: flutuando 50s linear infinite;
   z-index: 50;
+}
+
+@media screen and (max-width: 600px) {
+  .gato-flutuando {
+    position: fixed;
+    bottom: 100px;
+    left: 50px;
+    height: 100px;
+    width: 222px;
+    animation: flutuando-tele 25s linear infinite;
+    z-index: 50;
+  }
+}
+
+@keyframes flutuando-tele {
+  from {
+    transform: translateX(200vw);
+  }
+
+  to {
+    transform: translateX(-400px);
+  }
 }
 
 @keyframes flutuando {
   from {
-    transform: translateX(120vw);
+    transform: translateX(130vw);
   }
 
   to {
-    transform: translateX(-30vw);
+    transform: translateX(-50vw);
   }
 }
 
