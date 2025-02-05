@@ -35,7 +35,7 @@ body {
   font-family: sans-serif;
   z-index: 10;
   width: 60%;
-  height: 400px;
+  min-height: 320px;
 }
 
 .estrelas {
@@ -80,22 +80,36 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 20px;
-  margin-right: 20px;
 }
 
-.search-container label {
-  font-weight: bold;
-  margin-bottom: 5px;
+.input-container {
+  position: relative;
+}
+
+.input-container label {
+  position: absolute;
+  padding: 0 5px;
+  top: 1rem;
+  left: 1.5rem;
+  transition: 0.3s;
 }
 
 textarea {
   width: 100%;
-  height: 100px;
-  padding: 10px;
+  min-height: 100px;
+  padding: 1rem;
   font-size: 16px;
   border: 1px solid #000000;
   border-radius: 4px;
+}
+
+textarea:not(:placeholder-shown) ~ label {
+  top: -0.5rem;
+  background-color: white;
+  border-radius: 5px;
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #000000;
 }
 
 .button-group {
