@@ -13,24 +13,65 @@
 </head>
 
 <body>
-    <h1>Pesquisar pelo ticket</h1>
-    <div class="search-container">
-        <label for="search-input">Digite sua busca:</label>
-        <textarea id="search-input" name="search-input" placeholder="Digite aqui sua pesquisa."></textarea>
-        <div class="button-group">
-            <select id="search-type" name="search-type">
-                <option value="entire">Conteúdo Ticket</option>
-                <option value="message">Única Mensagem</option>
-            </select>
-            <button hx-post="/tickets/search" hx-trigger="click" hx-target="#results"
-                hx-include="[id='search-type'],[id='search-input']">
-                Pesquisar
-            </button>
+    <div class="search">
+        <h1>Pesquisar pelo ticket</h1>
+        <div class="search-container">
+            <div class="input-container">
+                <textarea id="search-input" name="search-input" placeholder=""></textarea>
+                <label for="search-input">Descrição do ticket</label>
+            </div>
+
+            <div class="button-group">
+                <select id="search-type" name="search-type">
+                    <option value="entire">Conteúdo Ticket</option>
+                    <option value="message">Única Mensagem</option>
+                </select>
+                <button hx-post="/tickets/search" hx-trigger="click" hx-target="#results"
+                    hx-include="[id='search-type'],[id='search-input']">
+                    Pesquisar
+                </button>
+            </div>
         </div>
     </div>
-    <ul id="results">
-        {{ template "results" .}}
-    </ul>
+
+    <div class="results">
+        <ul id="results">
+            {{ template "results" .}}
+        </ul>
+    </div>
+
+    <div class="gato-flutuando">
+        <div class="gato">
+            <div class="head"></div>
+            <div class="ear"></div>
+            <div class="eyes">
+                <div class="eye"></div>
+                <div class="eye"></div>
+            </div>
+            <div class="nose"></div>
+            <div class="mouth"></div>
+            <div class="body"></div>
+            <div class="tail"></div>
+            <div class="bubble"></div>
+        </div>
+
+        <div class="nuvem">
+            <div class="atras1"></div>
+            <div class="atras2"></div>
+            <div class="atras3"></div>
+            <div class="atras-encima-rabo"></div>
+            <div class="meio"></div>
+
+            <div class="frente1"></div>
+            <div class="frente2"></div>
+            <div class="frente3"></div>
+            <div class="frente4"></div>
+        </div>
+    </div>
+
+    <div class="estrelas">
+        <div class="stars"></div>
+    </div>
 </body>
 
 </html>
