@@ -107,9 +107,9 @@ textarea:not(:placeholder-shown) ~ label {
   top: -0.5rem;
   background-color: white;
   border-radius: 5px;
-  border-top: 2px solid #000000;
-  border-left: 2px solid #000000;
-  border-right: 2px solid #000000;
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+  border-right: 1px solid #000000;
 }
 
 .button-group {
