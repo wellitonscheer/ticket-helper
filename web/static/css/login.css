@@ -48,3 +48,16 @@ button {
 button:hover {
   background-color: #218838;
 }
+
+.message-sent-verification-code-success {
+  background-color: #4caf50; /* Green */
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  text-align: center;
+  width: fit-content;
+  margin: 20px auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

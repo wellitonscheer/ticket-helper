@@ -1,15 +1,15 @@
 package email
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/smtp"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
+	gomail "gopkg.in/mail.v2"
 )
 
-func SendEmail(to string, message []byte) error {
+func SendEmail(to, subject, message string) error {
 	err := godotenv.Load()
 	if err != nil {
 		return fmt.Errorf("error loading .env file: %v", err.Error())
@@ -19,77 +19,24 @@ func SendEmail(to string, message []byte) error {
 	user := os.Getenv("EMAIL_SERVER_USER")
 	password := os.Getenv("EMAIL_SERVER_PASSWORD")
 	smtpHost := os.Getenv("EMAIL_SERVER_HOST")
-	smtpPort := os.Getenv("EMAIL_SERVER_PORT")
-
-	conn, err := smtp.Dial(smtpHost + ":" + smtpPort)
+	smtpPort, err := strconv.Atoi(os.Getenv("EMAIL_SERVER_PORT"))
 	if err != nil {
-		return fmt.Errorf("failed to connect: %v", err.Error())
-	}
-	defer conn.Close()
-
-	// Send EHLO
-	err = conn.Hello("localhost")
-	if err != nil {
-		return fmt.Errorf("EHLO failed: %v", err.Error())
+		return fmt.Errorf("failed to convert port: %v", err.Error())
 	}
 
-	// Start TLS
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: false, // Should be true only for testing with self-signed certs
-		ServerName:         smtpHost,
-	}
+	sendMessage := gomail.NewMessage()
 
-	err = conn.StartTLS(tlsConfig)
-	if err != nil {
-		return fmt.Errorf("STARTTLS failed: %v", err.Error())
-	}
+	sendMessage.SetHeader("From", from)
+	sendMessage.SetHeader("To", to)
+	sendMessage.SetHeader("Subject", subject)
 
-	// Re-send EHLO after TLS is established
-	err = conn.Hello("localhost")
-	if err != nil {
-		return fmt.Errorf("EHLO after STARTTLS failed: %v", err.Error())
-	}
+	sendMessage.SetBody("text/plain", message)
 
-	// Authenticate
-	auth := smtp.PlainAuth("", user, password, smtpHost)
-	err = conn.Auth(auth)
-	if err != nil {
-		return fmt.Errorf("authentication failed: %v", err.Error())
-	}
+	dialer := gomail.NewDialer(smtpHost, smtpPort, user, password)
 
-	// Send email
-	err = conn.Mail(from)
-	if err != nil {
-		return fmt.Errorf("MAIL FROM failed: %v", err.Error())
+	if err := dialer.DialAndSend(sendMessage); err != nil {
+		return fmt.Errorf("failed to send email: %v", err.Error())
 	}
-
-	err = conn.Rcpt(to)
-	if err != nil {
-		return fmt.Errorf("RCPT TO failed: %v", err.Error())
-	}
-
-	wc, err := conn.Data()
-	if err != nil {
-		return fmt.Errorf("DATA failed: %v", err.Error())
-	}
-
-	_, err = wc.Write(message)
-	if err != nil {
-		return fmt.Errorf("writing message failed: %v", err.Error())
-	}
-
-	err = wc.Close()
-	if err != nil {
-		return fmt.Errorf("closing message failed: %v", err.Error())
-	}
-
-	// Quit session
-	err = conn.Quit()
-	if err != nil {
-		return fmt.Errorf("QUIT failed: %v", err.Error())
-	}
-
-	fmt.Println("Email sent successfully!")
 
 	return nil
 }

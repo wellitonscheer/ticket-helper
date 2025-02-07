@@ -15,7 +15,7 @@
 
 <body>
     <div class="login-container">
-        <form id="login-form" hx-post="/verify-email" hx-target="#verification-section" hx-swap="innerHTML">
+        <form id="login-form" hx-post="/login/send-verification" hx-target="#after-sent-code" hx-swap="innerHTML">
             <h3>Log In</h3>
             <div class="input-group">
                 <label for="email">Email</label>
@@ -23,6 +23,7 @@
             </div>
             <button type="submit">Enviar código de verificação</button>
         </form>
+        <div id="after-sent-code"></div>
 
         <div id="verification-section">
             <h3>Código de Verificação</h3>
@@ -41,3 +42,9 @@
 
 </html>
 {{end}}
+
+{{ block "sent-verification-code-success" . }}
+<div class="message-sent-verification-code-success">
+    O código de verificação foi enviado para seu e-mail.
+</div>
+{{ end }}

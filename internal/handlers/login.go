@@ -19,11 +19,13 @@ func (l *Login) LoginPage(c *gin.Context) {
 }
 
 func (l *Login) SendEmailVefificationCode(c *gin.Context) {
-	// email := c.PostForm("email")
-	to := "wellitonscheer@gmail.com"
+	to := c.PostForm("email")
 
-	err := email.SendEmail(to, []byte("hello there"))
+	err := email.SendEmail(to, "verification code", "your code is 343443")
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to send verification code: %v", err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to send verification code: %v", err.Error())})
+		return
 	}
+
+	c.HTML(http.StatusOK, "sent-verification-code-success", gin.H{})
 }

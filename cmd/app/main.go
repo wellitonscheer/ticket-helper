@@ -41,7 +41,7 @@ func main() {
 		loginHandlers := handlers.NewLoginHandlers()
 
 		login.GET("/", loginHandlers.LoginPage)
-		login.GET("/send", loginHandlers.SendEmailVefificationCode)
+		login.POST("/send-verification", loginHandlers.SendEmailVefificationCode)
 	}
 
 	learn := r.Group("/learn")
