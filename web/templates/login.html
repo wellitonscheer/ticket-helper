@@ -15,7 +15,7 @@
 
 <body>
     <div class="login-container">
-        <form id="login-form" hx-post="/login/send-verification" hx-target="#after-sent-code" hx-swap="innerHTML">
+        <form id="login-form" hx-post="/login/send-verification">
             <h3>Log In</h3>
             <div class="input-group">
                 <label for="email">Email</label>
@@ -23,7 +23,6 @@
             </div>
             <button type="submit">Enviar código de verificação</button>
         </form>
-        <div id="after-sent-code"></div>
 
         <div id="verification-section">
             <h3>Código de Verificação</h3>
@@ -44,7 +43,18 @@
 {{end}}
 
 {{ block "sent-verification-code-success" . }}
-<div class="message-sent-verification-code-success">
-    O código de verificação foi enviado para seu e-mail.
+<div id="after-sent-code">
+    <form id="login-form" hx-post="naofuncionahahaporfavornaotrocaissoprocerto">
+        <h3>Log In</h3>
+        <div class="input-group">
+            <label for="email">Email</label>
+            <input value="{{ .Email }}" disabled type="email" id="email" name="email" placeholder="Enter your email"
+                required>
+        </div>
+        <button disabled type="submit">Enviar código de verificação</button>
+    </form>
+    <div class="message-sent-verification-code-success">
+        O código de verificação foi enviado para seu e-mail.
+    </div>
 </div>
 {{ end }}
