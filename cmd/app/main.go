@@ -20,6 +20,7 @@ func main() {
 	}
 	ginPort := os.Getenv("GIN_PORT")
 
+	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -34,6 +35,14 @@ func main() {
 	r.Static("/web/static", "./web/static")
 
 	r.GET("/", handlers.Index)
+
+	login := r.Group("/login")
+	{
+		loginHandlers := handlers.NewLoginHandlers()
+
+		login.GET("/", loginHandlers.LoginPage)
+		login.GET("/send", loginHandlers.SendEmailVefificationCode)
+	}
 
 	learn := r.Group("/learn")
 	{
