@@ -6,7 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/wellitonscheer/ticket-helper/internal/email"
 	"github.com/wellitonscheer/ticket-helper/internal/sqlite"
+	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
 
 type Login struct{}
@@ -48,7 +50,7 @@ func (l *Login) SendEmailVefificationCode(c *gin.Context) {
 		return
 	}
 
-	authorized, err := sqliteLogin.IsAuthorizedEmail()
+	authorized, err := sqliteLogin.IsAuthorizedEmail(to)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed verify email: %v", err.Error())})
 		return
@@ -58,13 +60,25 @@ func (l *Login) SendEmailVefificationCode(c *gin.Context) {
 		return
 	}
 
-	// verificationCode := utils.Random6Numbers()
+	verificationCode := utils.Random6Numbers()
 
-	// err = email.SendEmail(to, "verification code", fmt.Sprintf("your code is %d", verificationCode))
+	err = sqliteLogin.InsertVerificationCode(to, verificationCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to save verification code: %v", err.Error())})
+		return
+	}
+
+	// tokenUuid, err := uuid.NewRandom()
 	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to send verification code: %v", err.Error())})
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to generate uuid: %v", err.Error())})
 	// 	return
 	// }
+
+	err = email.SendEmail(to, "verification code", fmt.Sprintf("your code is %d", verificationCode))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to send verification code: %v", err.Error())})
+		return
+	}
 
 	c.HTML(http.StatusOK, "sent-verification-code-success", gin.H{"Email": to})
 }
