@@ -18,4 +18,5 @@ dev: ## run everything it needs to start in dev with hot reload
 	./standalone_embed.sh start
 	./embedding.sh
 	./attu.sh
+	export CGO_ENABLED=1
 	air

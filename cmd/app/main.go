@@ -41,6 +41,7 @@ func main() {
 		loginHandlers := handlers.NewLoginHandlers()
 
 		login.GET("/", loginHandlers.LoginPage)
+		login.GET("/insert-authorized-emails", loginHandlers.InsertAuthorizedEmails)
 		login.POST("/send-verification", loginHandlers.SendEmailVefificationCode)
 	}
 
