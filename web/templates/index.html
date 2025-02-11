@@ -25,6 +25,7 @@
                 <select id="search-type" name="search-type">
                     <option value="entire">Conteúdo Ticket</option>
                     <option value="message">Única Mensagem</option>
+                    <option value="reply">Sugerir Resposta</option>
                 </select>
                 <button hx-post="/tickets/search" hx-trigger="click" hx-target="#results"
                     hx-include="[id='search-type'],[id='search-input']">
@@ -72,6 +73,7 @@
     <div class="estrelas">
         <div class="stars"></div>
     </div>
+
 </body>
 
 </html>
@@ -89,4 +91,12 @@
         target="_blank">https://suporte.setrem.com.br/scp/tickets.php?id={{ .TicketId }}</a>
     <span class="result-score">{{ .Score }}</span>
 </li>
+{{ end }}
+
+{{ block "suggeted-reply" . }}
+<div class="search">
+    <div class="search-container">
+        <textarea placeholder="">{{ .Reply }}</textarea>
+    </div>
+</div>
 {{ end }}

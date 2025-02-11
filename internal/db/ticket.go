@@ -10,9 +10,18 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/service"
 )
 
-type TicketSearchResult struct {
+type TicketSearchTicketsIdsResult struct {
 	TicketId string
 	Score    float32
+}
+
+type TicketSearchTicketsIdsResults = []TicketSearchTicketsIdsResult
+
+type TicketSearchResult struct {
+	Id            int64
+	TicketId      string
+	TicketContent string
+	Score         float32
 }
 
 type TicketSearchResults = []TicketSearchResult
@@ -197,7 +206,7 @@ func (t *TicketService) IsBlackListed(search *string) (bool, error) {
 	return false, nil
 }
 
-func (t *TicketService) VectorSearch(search *string) (TicketSearchResults, error) {
+func (t *TicketService) VectorSearchTicketsIds(search *string) (TicketSearchTicketsIdsResults, error) {
 	if search == nil {
 		return nil, errors.New("invalid search value")
 	}
@@ -228,7 +237,7 @@ func (t *TicketService) VectorSearch(search *string) (TicketSearchResults, error
 		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
 	}
 
-	var ticketsResult TicketSearchResults
+	var ticketsResult TicketSearchTicketsIdsResults
 	for _, result := range searchResults {
 		for _, field := range result.Fields {
 			var ticketIdColumn *entity.ColumnVarChar
@@ -246,8 +255,77 @@ func (t *TicketService) VectorSearch(search *string) (TicketSearchResults, error
 			ticketsIds := ticketIdColumn.Data()
 
 			for i, score := range result.Scores {
-				ticketsResult = append(ticketsResult, TicketSearchResult{TicketId: ticketsIds[i], Score: score})
+				ticketsResult = append(ticketsResult, TicketSearchTicketsIdsResult{TicketId: ticketsIds[i], Score: score})
 			}
+		}
+	}
+
+	return ticketsResult, nil
+}
+
+func (t *TicketService) VectorSearch(search *string) (TicketSearchResults, error) {
+	if search == nil {
+		return nil, errors.New("invalid search value")
+	}
+
+	hasColl, err := t.Milvus.c.HasCollection(t.Milvus.ctx, t.CollectionName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if has collection")
+	}
+	if !hasColl {
+		return nil, fmt.Errorf("'%s' collection doesnt exist", t.CollectionName)
+	}
+
+	embedInput := service.Input{
+		Inputs: []string{*search},
+	}
+	searchEmbedding, err := service.GetTextEmbeddings(&embedInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get search embeddings: %v", err.Error())
+	}
+
+	vector := entity.FloatVector(searchEmbedding[0])
+	sp, err := entity.NewIndexFlatSearchParam()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new index flat search param: %v", err.Error())
+	}
+	searchResults, err := t.Milvus.c.Search(t.Milvus.ctx, t.CollectionName, nil, "", []string{"ticketId", "id", "ticketContent"}, []entity.Vector{vector}, "ticketContentVector", entity.COSINE, 10, sp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
+	}
+
+	var ticketsResult TicketSearchResults
+
+	var idColumn *entity.ColumnInt64
+	var ticketIdColumn *entity.ColumnVarChar
+	var ticketContentColumn *entity.ColumnVarChar
+	for _, result := range searchResults {
+		for _, field := range result.Fields {
+			switch field.Name() {
+			case "id":
+				c, ok := field.(*entity.ColumnInt64)
+				if ok {
+					idColumn = c
+				}
+			case "ticketId":
+				c, ok := field.(*entity.ColumnVarChar)
+				if ok {
+					ticketIdColumn = c
+				}
+			case "ticketContent":
+				c, ok := field.(*entity.ColumnVarChar)
+				if ok {
+					ticketContentColumn = c
+				}
+			}
+		}
+
+		ids := idColumn.Data()
+		ticketsIds := ticketIdColumn.Data()
+		ticketsContent := ticketContentColumn.Data()
+
+		for i, score := range result.Scores {
+			ticketsResult = append(ticketsResult, TicketSearchResult{Id: ids[i], TicketId: ticketsIds[i], TicketContent: ticketsContent[i], Score: score})
 		}
 	}
 
