@@ -43,6 +43,7 @@ func main() {
 		login.GET("/", loginHandlers.LoginPage)
 		login.GET("/insert-authorized-emails", loginHandlers.InsertAuthorizedEmails)
 		login.POST("/send-verification", loginHandlers.SendEmailVefificationCode)
+		login.POST("/validate-verification", loginHandlers.ValidateVefificationCode)
 	}
 
 	learn := r.Group("/learn")

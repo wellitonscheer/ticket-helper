@@ -16,27 +16,30 @@
 
 <body>
     <div class="login-container">
-        <form id="login-form" hx-post="/login/send-verification" hx-swap="outerHTML"
-            data-loading-target="#sending-email" data-loading-class-remove="hidden">
+        <div id="login-form">
             <h3>Log In</h3>
             <div class="input-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" placeholder="Enter your email" required>
             </div>
-            <button type="submit" data-loading-disable>Enviar código de verificação</button>
-        </form>
+            <button hx-trigger="click" hx-target="#login-form" hx-post="/login/send-verification" hx-swap="outerHTML"
+                hx-include="[id='email']" data-loading-target="#sending-email" data-loading-class-remove="hidden"
+                data-loading-disable>Enviar
+                código de verificação</button>
+        </div>
         <div id="sending-email" class="message-sent-verification-code-success hidden">Loading ...</div>
 
         <div id="verification-section">
             <h3>Código de Verificação</h3>
-            <form id="verification-form" hx-post="/verify-code" hx-target="#response-message" hx-swap="innerHTML">
+            <div id="verification-form">
                 <div class="input-group">
                     <label for="verification-code">Código</label>
                     <input type="text" id="verification-code" name="code" placeholder="Enter verification code"
                         required>
                 </div>
-                <button type="submit">Verificar Código</button>
-            </form>
+                <button hx-trigger="click" hx-post="/login/validate-verification" hx-target="#response-message"
+                    hx-swap="innerHTML" hx-include="[id='verification-code'],[id='email']">Verificar Código</button>
+            </div>
             <div id="response-message"></div>
         </div>
     </div>
@@ -47,14 +50,17 @@
 
 {{ block "sent-verification-code-success" . }}
 <div id="after-sent-code">
-    <form id="login-form" hx-post="naofuncionahahaporfavornaotrocaissoprocerto">
+    <div id="login-form">
         <h3>Log In</h3>
         <div class="input-group">
             <label for="email">Email</label>
-            <input value="{{ .Email }}" disabled type="email" id="email" placeholder="Enter your email" required>
+            <input value="{{ .Email }}" type="email" id="email" name="email" placeholder="Enter your email" required>
         </div>
-        <button disabled type="submit">Enviar código de verificação</button>
-    </form>
+        <button hx-trigger="click" hx-target="#login-form" hx-post="naofuncionahahaporfavornaotrocaissoprocerto"
+            hx-swap="outerHTML" hx-include="[id='email']" data-loading-target="#sending-email"
+            data-loading-class-remove="hidden" data-loading-disable disabled>Enviar
+            código de verificação</button>
+    </div>
     <div class="message-sent-verification-code-success">
         O código de verificação foi enviado para seu e-mail.
     </div>
