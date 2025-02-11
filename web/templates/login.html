@@ -1,0 +1,64 @@
+{{ block "login" . }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"
+        integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/loading-states.js"></script>
+    <link rel="stylesheet" href="/web/static/css/login.css">
+    <script src=""></script>
+</head>
+
+<body>
+    <div class="login-container">
+        <div id="login-form">
+            <h3>Log In</h3>
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
+            <button hx-trigger="click" hx-target="#login-form" hx-post="/login/send-verification" hx-swap="outerHTML"
+                hx-include="[id='email']" data-loading-target="#sending-email" data-loading-class-remove="hidden"
+                data-loading-disable>Enviar
+                código de verificação</button>
+        </div>
+        <div id="sending-email" class="message-sent-verification-code-success hidden">Loading ...</div>
+
+        <div id="verification-section">
+            <h3>Código de Verificação</h3>
+            <div id="verification-form">
+                <div class="input-group">
+                    <label for="verification-code">Código</label>
+                    <input type="text" id="verification-code" name="code" placeholder="Enter verification code"
+                        required>
+                </div>
+                <button hx-trigger="click" hx-post="/login/validate-verification" hx-target="#response-message"
+                    hx-swap="innerHTML" hx-include="[id='verification-code'],[id='email']">Verificar Código</button>
+            </div>
+            <div id="response-message"></div>
+        </div>
+    </div>
+</body>
+
+</html>
+{{end}}
+
+{{ block "sent-verification-code-success" . }}
+<div id="after-sent-code">
+    <div id="login-form">
+        <h3>Log In</h3>
+        <div class="input-group">
+            <label for="email">Email</label>
+            <input value="{{ .Email }}" type="email" id="email" name="email" placeholder="Enter your email" required>
+        </div>
+    </div>
+    <div class="message-sent-verification-code-success">
+        O código de verificação foi enviado para seu e-mail.
+    </div>
+</div>
+{{ end }}
