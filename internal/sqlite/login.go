@@ -147,3 +147,26 @@ func (l *LiteLogin) CreateUserSession(email, token string) error {
 
 	return nil
 }
+
+type Session struct {
+	Id         int
+	Email      string
+	Token      string
+	Expires_at time.Time
+}
+
+func (l *LiteLogin) IsValidSession(token string) (bool, error) {
+	var session Session
+
+	findSessionStmt := "SELECT * FROM session WHERE token = ? AND expires_at >= DATETIME('now', 'localtime');"
+	err := l.db.QueryRow(findSessionStmt, token).Scan(&session.Id, &session.Email, &session.Token, &session.Expires_at)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, fmt.Errorf("invalid session")
+		}
+
+		return false, fmt.Errorf("failed to select session: %v: %s: %s", err.Error(), findSessionStmt, token)
+	}
+
+	return true, nil
+}

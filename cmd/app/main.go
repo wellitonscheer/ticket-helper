@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
+	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
 )
 
 func main() {
@@ -33,8 +34,6 @@ func main() {
 
 	r.LoadHTMLGlob("web/templates/*.html")
 	r.Static("/web/static", "./web/static")
-
-	r.GET("/", handlers.Index)
 
 	login := r.Group("/login")
 	{
@@ -62,18 +61,20 @@ func main() {
 		})
 	})
 
-	r.GET("/user/:name", handlers.UserNew)
+	auth := r.Group("/")
+	auth.Use(middleware.AuthMiddleware())
+	{
+		auth.GET("/", handlers.Index)
+		auth.GET("/user/:name", handlers.UserNew)
+		auth.GET("/tickets", handlers.TicketInsertAll)
+		auth.POST("/tickets/search", handlers.TicketVectorSearch)
+		auth.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
+		auth.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 
-	r.GET("/tickets", handlers.TicketInsertAll)
-	r.POST("/tickets/search", handlers.TicketVectorSearch)
-
-	r.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
-
-	r.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
-
-	r.GET("/kill", func(c *gin.Context) {
-		log.Fatal()
-	})
+		auth.GET("/kill", func(c *gin.Context) {
+			log.Fatal()
+		})
+	}
 
 	r.Run(fmt.Sprintf(":%s", ginPort))
 }

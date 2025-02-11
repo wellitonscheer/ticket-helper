@@ -56,10 +56,6 @@
             <label for="email">Email</label>
             <input value="{{ .Email }}" type="email" id="email" name="email" placeholder="Enter your email" required>
         </div>
-        <button hx-trigger="click" hx-target="#login-form" hx-post="naofuncionahahaporfavornaotrocaissoprocerto"
-            hx-swap="outerHTML" hx-include="[id='email']" data-loading-target="#sending-email"
-            data-loading-class-remove="hidden" data-loading-disable disabled>Enviar
-            código de verificação</button>
     </div>
     <div class="message-sent-verification-code-success">
         O código de verificação foi enviado para seu e-mail.
