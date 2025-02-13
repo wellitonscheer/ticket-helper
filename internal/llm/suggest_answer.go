@@ -1,6 +1,7 @@
 package llm
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/wellitonscheer/ticket-helper/internal/db"
@@ -34,24 +35,29 @@ func SuggestReply(search *string) (string, error) {
 		Regras essenciais:
 		1. Nunca inclua informações que não estejam no contexto.
 		2. Se o contexto não contiver informações suficientes para responder ao novo ticket, sua resposta deve ser neutra.
+		3. Se o novo ticket não tiver informações suficientes para que uma resposta baseada no contexto seja formulada, responda solicitando mais detalhes ao solicitante, mantendo a objetividade e o tom das mensagens anteriores.
 		4. Adapte o tom para ser coerente com os tickets anteriores.
 		5. Não fale coisas como 'Com base no contexto fornecido anteriormente'
 
 		Entrada do modelo:
 
-		Contexto dos tickets anteriores:
-		[aqui todas as mensagens anteriores relevantes]  
+		<ContextoDosTicketsAnteriores>
+		[aqui todas as mensagens anteriores relevantes]
+		</ContextoDosTicketsAnteriores>
 
-		Novo ticket recebido:
+		<NovoTicketRecebido>
 		[aqui o conteúdo da nova solicitação]
+		</NovoTicketRecebido>
 	`
 
 	userRole := fmt.Sprintf(`
-		Contexto dos tickets anteriores:  
+		<ContextoDosTicketsAnteriores>
 		%s
+		</ContextoDosTicketsAnteriores>
 
-		Novo ticket recebido:
+		<NovoTicketRecebido>
 		%s
+		</NovoTicketRecebido>
 	`, allTicketsContent, *search)
 
 	modelResponse, err := service.LmstudioModel(&service.Messages{
@@ -66,6 +72,10 @@ func SuggestReply(search *string) (string, error) {
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to get suggestion: %s", err.Error())
+	}
+
+	if len(modelResponse.Choices) == 0 {
+		return "", errors.New("model didnt return any suggestion")
 	}
 
 	return modelResponse.Choices[0].Message.Content, nil
