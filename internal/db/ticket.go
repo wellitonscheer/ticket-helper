@@ -289,7 +289,7 @@ func (t *TicketService) VectorSearch(search *string) (TicketSearchResults, error
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new index flat search param: %v", err.Error())
 	}
-	searchResults, err := t.Milvus.c.Search(t.Milvus.ctx, t.CollectionName, nil, "", []string{"ticketId", "id", "ticketContent"}, []entity.Vector{vector}, "ticketContentVector", entity.COSINE, 10, sp)
+	searchResults, err := t.Milvus.c.Search(t.Milvus.ctx, t.CollectionName, nil, "", []string{"ticketId", "id", "ticketContent"}, []entity.Vector{vector}, "ticketContentVector", entity.COSINE, 20, sp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
 	}
