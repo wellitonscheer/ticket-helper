@@ -35,6 +35,11 @@ func TicketVectorSearch(c *gin.Context) {
 	searchInput := c.PostForm("search-input")
 	searchType := c.PostForm("search-type")
 
+	if len(searchInput) == 0 || len(searchType) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search data"})
+		return
+	}
+
 	var tickets db.TicketSearchTicketsIdsResults
 	if searchType == entireTicketContent {
 		ticketService, err := db.NewTicketService()

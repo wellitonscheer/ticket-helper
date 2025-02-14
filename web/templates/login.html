@@ -9,7 +9,6 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"
         integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
         crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/loading-states.js"></script>
     <link rel="stylesheet" href="/web/static/css/login.css">
     <script src=""></script>
 </head>
@@ -22,12 +21,16 @@
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" placeholder="Enter your email" required>
             </div>
-            <button hx-trigger="click" hx-target="#login-form" hx-post="/login/send-verification" hx-swap="outerHTML"
-                hx-include="[id='email']" data-loading-target="#sending-email" data-loading-class-remove="hidden"
-                data-loading-disable>Enviar
+            <button class="button-send-verification" id="button-send-verification" hx-trigger="click"
+                hx-target="#login-form" hx-post="/login/send-verification" hx-swap="outerHTML" hx-include="[id='email']"
+                hx-indicator="[id='loading'],[id='button-send-verification']">Enviar
                 código de verificação</button>
         </div>
-        <div id="sending-email" class="message-sent-verification-code-success hidden">Loading ...</div>
+        <div id="loading" class="htmx-indicator">
+            <div class="loading-spinner">
+                <img src="/web/static/images/infinite-spinner.svg" alt="loading">
+            </div>
+        </div>
 
         <div id="verification-section">
             <h3>Código de Verificação</h3>

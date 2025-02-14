@@ -2,6 +2,8 @@ include .env
 export
 
 APP_BINARY_NAME=ticket-helper
+LMSTUDIO_APPIMAGE_PATH := $(HOME)/Downloads/programs
+LMSTUDIO_APPIMAGE := $(LMSTUDIO_APPIMAGE_PATH)/LM-Studio*.AppImage
 
 .PHONY: help
 help: ## display this help message
@@ -18,5 +20,6 @@ dev: ## run everything it needs to start in dev with hot reload
 	./standalone_embed.sh start
 	./embedding.sh
 	./attu.sh
+	$(LMSTUDIO_APPIMAGE) --no-sandbox &
 	export CGO_ENABLED=1
 	air
