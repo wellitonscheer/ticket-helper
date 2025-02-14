@@ -26,6 +26,8 @@ type Messages = []Message
 
 const model = "qwen2.5-7b-instruct-1m"
 
+// const model = "deepseek-r1-distill-qwen-7b"
+
 type ModelOutput struct {
 	ID                string   `json:"id"`
 	Object            string   `json:"object"`

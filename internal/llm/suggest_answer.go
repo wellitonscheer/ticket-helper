@@ -30,17 +30,15 @@ func SuggestReply(search *string) (string, error) {
 	}
 
 	systemRole := `
-		Você é um assistente que responde tickets de um serviço de suporte. Sua tarefa é gerar uma resposta para um novo ticket usando apenas o contexto fornecido, que consiste em mensagens trocadas anteriormente sobre problemas similares.
+		Você é um assistente de suporte técnico que responde tickets. Gere respostas ao novo ticket usando somente as informações disponíveis no contexto (mensagens anteriores). 
 
-		Regras essenciais:
-		1. Nunca inclua informações que não estejam no contexto.
-		2. Se o contexto não contiver informações suficientes para responder ao novo ticket, sua resposta deve ser neutra.
-		3. Se o novo ticket não tiver informações suficientes para que uma resposta baseada no contexto seja formulada, responda solicitando mais detalhes ao solicitante, mantendo a objetividade e o tom das mensagens anteriores.
-		4. Adapte o tom para ser coerente com os tickets anteriores.
-		5. Não fale coisas como 'Com base no contexto fornecido anteriormente'
+		Regras obrigatórias:
+		1. Use apenas dados presentes no contexto.
+		2. Se o contexto for insuficiente, solicite mais detalhes de forma objetiva ou responda de maneira neutra.
+		3. Mantenha o mesmo tom e estilo dos tickets anteriores.
+		4. Não inclua informações extras nem mencione que está usando o contexto (evite "baseado no contexto...").
 
-		Entrada do modelo:
-
+		Formato de entrada:
 		<ContextoDosTicketsAnteriores>
 		[aqui todas as mensagens anteriores relevantes]
 		</ContextoDosTicketsAnteriores>
@@ -48,6 +46,13 @@ func SuggestReply(search *string) (string, error) {
 		<NovoTicketRecebido>
 		[aqui o conteúdo da nova solicitação]
 		</NovoTicketRecebido>
+
+		Exemplo de resposta desejada:
+		[saudação inicial, definindo o tom da comunicação (ex.: "Olá", "Boa tarde")]
+
+		[Resposta direta à solicitação, usando apenas informações do contexto.]
+
+		[despedida, encerrando a mensagem de forma cordial (ex.: "Atenciosamente")]
 	`
 
 	userRole := fmt.Sprintf(`
