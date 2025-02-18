@@ -25,8 +25,10 @@
                 <select id="search-type" name="search-type">
                     <option value="entire">Conteúdo Ticket</option>
                     <option value="message">Única Mensagem</option>
+                    <option value="reply">Sugerir Resposta</option>
                 </select>
-                <button hx-post="/tickets/search" hx-trigger="click" hx-target="#results"
+                <button id="button-pesquisar" class="button-pesquisar" hx-post="/tickets/search" hx-trigger="click"
+                    hx-target="#results" hx-indicator="[id='loading'],[id='button-pesquisar']"
                     hx-include="[id='search-type'],[id='search-input']">
                     Pesquisar
                 </button>
@@ -35,6 +37,11 @@
     </div>
 
     <div class="results">
+        <div id="loading" class="htmx-indicator">
+            <div class="loading-spinner">
+                <img src="/web/static/images/infinite-spinner.svg" alt="loading">
+            </div>
+        </div>
         <ul id="results">
             {{ template "results" .}}
         </ul>
@@ -72,6 +79,7 @@
     <div class="estrelas">
         <div class="stars"></div>
     </div>
+
 </body>
 
 </html>
@@ -89,4 +97,12 @@
         target="_blank">https://suporte.setrem.com.br/scp/tickets.php?id={{ .TicketId }}</a>
     <span class="result-score">{{ .Score }}</span>
 </li>
+{{ end }}
+
+{{ block "suggeted-reply" . }}
+<div class="search">
+    <div class="search-container">
+        <textarea placeholder="">{{ .Reply }}</textarea>
+    </div>
+</div>
 {{ end }}

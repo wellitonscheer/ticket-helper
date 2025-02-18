@@ -132,11 +132,48 @@ button:hover {
   background-color: #0056b3;
 }
 
+.htmx-request.button-pesquisar {
+  background-color: #ccc;
+  color: #666;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 select {
   padding: 10px;
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
+}
+
+.htmx-indicator {
+  display: none;
+  transition: display 500ms ease-in;
+}
+.htmx-request .htmx-indicator {
+  display: block;
+}
+.htmx-request.htmx-indicator {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.htmx-request.htmx-indicator ~ #results {
+  display: none;
+}
+
+#results {
+  display: block;
+}
+
+.loading-spinner {
+  height: 10rem;
+  width: 14rem;
+}
+.loading-spinner img {
+  color: #000;
 }
 
 .results {

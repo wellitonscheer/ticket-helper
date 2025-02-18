@@ -49,6 +49,39 @@ button:hover {
   background-color: #218838;
 }
 
+.htmx-request.button-send-verification {
+  width: 100%;
+  padding: 10px;
+  background-color: #ccc;
+  color: #666;
+  pointer-events: none;
+  opacity: 0.6;
+  border: none;
+  border-radius: 3px;
+}
+
+.htmx-indicator {
+  display: none;
+  transition: display 500ms ease-in;
+}
+.htmx-request .htmx-indicator {
+  display: block;
+}
+.htmx-request.htmx-indicator {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  height: 4rem;
+  width: 6rem;
+}
+.loading-spinner img {
+  color: #000;
+}
+
 .message-sent-verification-code-success {
   background-color: #4caf50; /* Green */
   color: white;

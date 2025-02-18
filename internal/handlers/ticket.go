@@ -6,11 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wellitonscheer/ticket-helper/internal/db"
+	"github.com/wellitonscheer/ticket-helper/internal/llm"
 )
 
 const (
 	entireTicketContent = "entire"
 	singleMessages      = "message"
+	suggestReply        = "reply"
 )
 
 func TicketInsertAll(c *gin.Context) {
@@ -33,7 +35,12 @@ func TicketVectorSearch(c *gin.Context) {
 	searchInput := c.PostForm("search-input")
 	searchType := c.PostForm("search-type")
 
-	var tickets db.TicketSearchResults
+	if len(searchInput) == 0 || len(searchType) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search data"})
+		return
+	}
+
+	var tickets db.TicketSearchTicketsIdsResults
 	if searchType == entireTicketContent {
 		ticketService, err := db.NewTicketService()
 		if err != nil {
@@ -41,7 +48,7 @@ func TicketVectorSearch(c *gin.Context) {
 			return
 		}
 
-		tickets, err = ticketService.VectorSearch(&searchInput)
+		tickets, err = ticketService.VectorSearchTicketsIds(&searchInput)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
 			return
@@ -58,6 +65,15 @@ func TicketVectorSearch(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search message ticket: %s", err.Error())})
 			return
 		}
+	} else if searchType == suggestReply {
+		suggested, err := llm.SuggestReply(&searchInput)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to suggest reply: %s", err.Error())})
+			return
+		}
+
+		c.HTML(http.StatusOK, "suggeted-reply", gin.H{"Reply": suggested})
+		return
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search type"})
 		return

@@ -139,7 +139,7 @@ func (tm *TicketMessage) InsertAllTickets() error {
 	return nil
 }
 
-func (tm *TicketMessage) VectorSearch(search *string) (TicketSearchResults, error) {
+func (tm *TicketMessage) VectorSearch(search *string) (TicketSearchTicketsIdsResults, error) {
 	if search == nil {
 		return nil, errors.New("invalid search value")
 	}
@@ -170,7 +170,7 @@ func (tm *TicketMessage) VectorSearch(search *string) (TicketSearchResults, erro
 		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
 	}
 
-	var ticketsResult TicketSearchResults
+	var ticketsResult TicketSearchTicketsIdsResults
 	for _, result := range searchResults {
 		for _, field := range result.Fields {
 			var ticketIdColumn *entity.ColumnVarChar
@@ -188,7 +188,7 @@ func (tm *TicketMessage) VectorSearch(search *string) (TicketSearchResults, erro
 			ticketsIds := ticketIdColumn.Data()
 
 			for i, score := range result.Scores {
-				ticketsResult = append(ticketsResult, TicketSearchResult{TicketId: ticketsIds[i], Score: score})
+				ticketsResult = append(ticketsResult, TicketSearchTicketsIdsResult{TicketId: ticketsIds[i], Score: score})
 			}
 		}
 	}
