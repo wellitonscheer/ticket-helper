@@ -42,7 +42,7 @@ def generate_text(sequence: str) -> str:
         top_p=0.95,
         # num_return_sequences=1,
         # no_repeat_ngram_size=2,
-        temperature=0.9,
+        temperature=0.7,
         num_beams=3,
     )
 
@@ -51,12 +51,16 @@ def generate_text(sequence: str) -> str:
 
 def main():
     sequence = '''
-    Olá, tudo bem? 
-    Preciso de ajuda para baixar/encontrar o logos no IOS, não estou encontrado!
-'''
+        Solicitação de compra de leitor de codigo de barras
+        Boa tarde.
+        Conforme conversa com Anderson, ele pediu para solicitar a compra de um leitor de codigo de barras
+        e de QR-code, pois o leitor que eu tenho no momento só lê o código de barras....preciso de um que
+        leia QR-code também.
+        Obrigada
+    '''
     result = generate_text(sequence)
-    print("result aaaaaaaaaaaaaaaaaaaaaaaaa\n")
-    print(result)
+
+    print("\n", result, "\n")
 
 
 if __name__ == "__main__":
