@@ -41,6 +41,7 @@ func (l *Login) InsertAuthorizedEmails(c *gin.Context) {
 
 func (l *Login) SendEmailVefificationCode(c *gin.Context) {
 	to := c.PostForm("email")
+	fmt.Printf("email: %s \n", to)
 	if len(to) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid email"})
 		return
