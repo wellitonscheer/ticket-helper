@@ -2,27 +2,31 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"github.com/wellitonscheer/ticket-helper/internal/config"
+	"github.com/wellitonscheer/ticket-helper/internal/db"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
 	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file:", err.Error())
-	}
-	ginPort := os.Getenv("GIN_PORT")
+	conf := config.NewConfig()
 
-	gin.SetMode(gin.DebugMode)
+	if conf.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
+	milvus := db.NewMilvusConnection(&conf)
+	defer milvus.Cancel()
+
 	r := gin.Default()
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -71,10 +75,10 @@ func main() {
 		auth.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
 		auth.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 
-		auth.GET("/kill", func(c *gin.Context) {
-			log.Fatal()
+		auth.GET("/kys", func(c *gin.Context) {
+			panic("Good bye ;-;")
 		})
 	}
 
-	r.Run(fmt.Sprintf(":%s", ginPort))
+	r.Run(fmt.Sprintf(":%s", conf.Common.GinPort))
 }

@@ -27,7 +27,7 @@ func newUser(userName *string) error {
 		return fmt.Errorf("failed to connect to milvus: %v", err.Error())
 	}
 
-	collExists, err := milvus.c.HasCollection(milvus.ctx, userCollName)
+	collExists, err := milvus.client.HasCollection(milvus.ctx, userCollName)
 	if err != nil {
 		return fmt.Errorf("failed to check collection exists: %v", err.Error())
 	}
@@ -41,7 +41,7 @@ func newUser(userName *string) error {
 		}
 	}
 
-	collections, err := milvus.c.ListCollections(milvus.ctx)
+	collections, err := milvus.client.ListCollections(milvus.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list collections: %v", err.Error())
 	}
@@ -60,12 +60,12 @@ func newUser(userName *string) error {
 	userNameColumn := entity.NewColumnVarChar("userName", []string{*userName})
 	vectorColumn := entity.NewColumnFloatVector("vector", 1024, embeddedUserName)
 
-	_, err = milvus.c.Insert(milvus.ctx, userCollName, "", userNameColumn, vectorColumn)
+	_, err = milvus.client.Insert(milvus.ctx, userCollName, "", userNameColumn, vectorColumn)
 	if err != nil {
 		return fmt.Errorf("failed to insert user: %v", err.Error())
 	}
 
-	err = milvus.c.Flush(milvus.ctx, userCollName, false)
+	err = milvus.client.Flush(milvus.ctx, userCollName, false)
 	if err != nil {
 		return fmt.Errorf("failed to flush collection: %v", err.Error())
 	}
@@ -120,7 +120,7 @@ func createUserCollection() error {
 			},
 		},
 	}
-	err = milvus.c.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
+	err = milvus.client.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
 		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
@@ -130,12 +130,12 @@ func createUserCollection() error {
 		return fmt.Errorf("fail to create ivf flat index: %v", err.Error())
 	}
 
-	err = milvus.c.CreateIndex(milvus.ctx, userCollName, "vector", idx, false)
+	err = milvus.client.CreateIndex(milvus.ctx, userCollName, "vector", idx, false)
 	if err != nil {
 		return fmt.Errorf("fail to create index: %v", err.Error())
 	}
 
-	err = milvus.c.LoadCollection(milvus.ctx, userCollName, false)
+	err = milvus.client.LoadCollection(milvus.ctx, userCollName, false)
 	if err != nil {
 		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}

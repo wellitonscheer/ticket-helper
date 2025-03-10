@@ -27,13 +27,13 @@ func NewBlackTicket() (*BlackTicket, error) {
 }
 
 func (tm *BlackTicket) InsertAllTickets() error {
-	collExists, err := tm.Milvus.c.HasCollection(tm.Milvus.ctx, tm.CollectionName)
+	collExists, err := tm.Milvus.Client.HasCollection(tm.Milvus.Ctx, tm.CollectionName)
 	if err != nil {
 		return fmt.Errorf("failed to check if collection exists: %v", err.Error())
 	}
 
 	if collExists {
-		err = tm.Milvus.c.DropCollection(tm.Milvus.ctx, tm.CollectionName)
+		err = tm.Milvus.Client.DropCollection(tm.Milvus.Ctx, tm.CollectionName)
 		if err != nil {
 			return fmt.Errorf("failed to drop collection: %v", err.Error())
 		}
@@ -83,17 +83,17 @@ func (tm *BlackTicket) InsertAllTickets() error {
 	ticketContentColumn := entity.NewColumnVarChar("ticketContent", ticketContents)
 	ticketContentVecColumn := entity.NewColumnFloatVector("ticketContentVector", 1024, ticketContentVector)
 
-	_, err = tm.Milvus.c.Insert(tm.Milvus.ctx, tm.CollectionName, "", ticketContentColumn, ticketContentVecColumn)
+	_, err = tm.Milvus.Client.Insert(tm.Milvus.Ctx, tm.CollectionName, "", ticketContentColumn, ticketContentVecColumn)
 	if err != nil {
 		return fmt.Errorf("failed to insert tickets: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.Flush(tm.Milvus.ctx, tm.CollectionName, false)
+	err = tm.Milvus.Client.Flush(tm.Milvus.Ctx, tm.CollectionName, false)
 	if err != nil {
 		return fmt.Errorf("failed to flush collection: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.LoadCollection(tm.Milvus.ctx, tm.CollectionName, false)
+	err = tm.Milvus.Client.LoadCollection(tm.Milvus.Ctx, tm.CollectionName, false)
 	if err != nil {
 		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}
@@ -134,7 +134,7 @@ func (tm *BlackTicket) CreateCollection() error {
 		},
 	}
 
-	err := tm.Milvus.c.CreateCollection(tm.Milvus.ctx, &schema, 1)
+	err := tm.Milvus.Client.CreateCollection(tm.Milvus.Ctx, &schema, 1)
 	if err != nil {
 		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
@@ -144,12 +144,12 @@ func (tm *BlackTicket) CreateCollection() error {
 		return fmt.Errorf("fail to create ivf flat index: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.CreateIndex(tm.Milvus.ctx, tm.CollectionName, "ticketContentVector", idx, false)
+	err = tm.Milvus.Client.CreateIndex(tm.Milvus.Ctx, tm.CollectionName, "ticketContentVector", idx, false)
 	if err != nil {
 		return fmt.Errorf("fail to create index: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.LoadCollection(tm.Milvus.ctx, tm.CollectionName, false)
+	err = tm.Milvus.Client.LoadCollection(tm.Milvus.Ctx, tm.CollectionName, false)
 	if err != nil {
 		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}
