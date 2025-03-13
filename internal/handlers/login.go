@@ -8,22 +8,27 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/wellitonscheer/ticket-helper/internal/email"
+	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite/liteservi"
 	"github.com/wellitonscheer/ticket-helper/internal/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
 
-type Login struct{}
-
-func NewLoginHandlers() *Login {
-	return &Login{}
+type LoginHandlers struct {
+	appContext context.AppContext
 }
 
-func (l *Login) LoginPage(c *gin.Context) {
+func NewLoginHandlers(appContext context.AppContext) LoginHandlers {
+	return LoginHandlers{
+		appContext: appContext,
+	}
+}
+
+func (l LoginHandlers) LoginPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "login", gin.H{})
 }
 
-func (l *Login) InsertAuthorizedEmails(c *gin.Context) {
+func (l LoginHandlers) InsertAuthorizedEmails(c *gin.Context) {
 	sqliteLogin, err := sqlite.NewSqliteLogin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed initialize login: %v", err.Error())})
@@ -39,24 +44,16 @@ func (l *Login) InsertAuthorizedEmails(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "done"})
 }
 
-func (l *Login) SendEmailVefificationCode(c *gin.Context) {
+func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
 	to := c.PostForm("email")
 	if len(to) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid email"})
 		return
 	}
 
-	sqliteLogin, err := sqlite.NewSqliteLogin()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed initialize login: %v", err.Error())})
-		return
-	}
+	authoEmailService := liteservi.NewAuthorizedEmailsService(l.appContext)
 
-	authorized, err := sqliteLogin.IsAuthorizedEmail(to)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed verify email: %v", err.Error())})
-		return
-	}
+	authorized := authoEmailService.IsAuthorizedEmail(to)
 	if !authorized {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "email not authorized to login"})
 		return
@@ -64,13 +61,15 @@ func (l *Login) SendEmailVefificationCode(c *gin.Context) {
 
 	verificationCode := utils.Random6Numbers()
 
-	err = sqliteLogin.InsertVerificationCode(to, verificationCode)
+	veriCodeService := liteservi.NewVerificationCodeService(l.appContext)
+
+	err := veriCodeService.NewVerificationCode(to, verificationCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to save verification code: %v", err.Error())})
 		return
 	}
 
-	err = email.SendEmail(to, "verification code", fmt.Sprintf("your code is %d", verificationCode))
+	err = utils.SendEmail(l.appContext.Config.Email, to, "verification code", fmt.Sprintf("your code is %d", verificationCode))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to send verification code: %v", err.Error())})
 		return
@@ -79,7 +78,7 @@ func (l *Login) SendEmailVefificationCode(c *gin.Context) {
 	c.HTML(http.StatusOK, "sent-verification-code-success", gin.H{"Email": to})
 }
 
-func (l *Login) ValidateVefificationCode(c *gin.Context) {
+func (l LoginHandlers) ValidateVefificationCode(c *gin.Context) {
 	email := c.PostForm("email")
 	code := c.PostForm("code")
 	if len(email) == 0 || len(code) == 0 {

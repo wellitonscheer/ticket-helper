@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/wellitonscheer/ticket-helper/internal/db"
+	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/service"
 )
 
 func SuggestReply(search *string) (string, error) {
-	ticketService, err := db.NewTicketService()
+	ticketService, err := milvus.NewTicketService()
 	if err != nil {
 		return "", fmt.Errorf("failed create ticket service: %s", err.Error())
 	}

@@ -8,9 +8,11 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/wellitonscheer/ticket-helper/internal/config"
-	"github.com/wellitonscheer/ticket-helper/internal/db"
+	"github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
+	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
+	"github.com/wellitonscheer/ticket-helper/internal/sqlite"
 )
 
 func main() {
@@ -22,8 +24,18 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	milvus := db.NewMilvusConnection(&conf)
+	sqliteDb := sqlite.NewSqliteConnection()
+	defer sqliteDb.Close()
+
+	milvus := milvus.NewMilvusConnection(&conf)
+	defer milvus.Client.Close()
 	defer milvus.Cancel()
+
+	appContext := context.AppContext{
+		Config: &conf,
+		Sqlite: sqliteDb,
+		Milvus: milvus,
+	}
 
 	r := gin.Default()
 
@@ -39,10 +51,9 @@ func main() {
 	r.LoadHTMLGlob("web/templates/*.html")
 	r.Static("/web/static", "./web/static")
 
+	loginHandlers := handlers.NewLoginHandlers(appContext)
 	login := r.Group("/login")
 	{
-		loginHandlers := handlers.NewLoginHandlers()
-
 		login.GET("/", loginHandlers.LoginPage)
 		login.GET("/insert-authorized-emails", loginHandlers.InsertAuthorizedEmails)
 		login.POST("/send-verification", loginHandlers.SendEmailVefificationCode)

@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wellitonscheer/ticket-helper/internal/db"
+	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 )
 
 func TicketMessagesInsertAll(c *gin.Context) {
-	ticketMessage, err := db.NewTicketMessage()
+	ticketMessage, err := milvus.NewTicketMessage()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
 		return

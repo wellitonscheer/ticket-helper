@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wellitonscheer/ticket-helper/internal/db"
 	"github.com/wellitonscheer/ticket-helper/internal/llm"
+	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 )
 
 func TicketInsertAll(c *gin.Context) {
-	ticketService, err := db.NewTicketService()
+	ticketService, err := milvus.NewTicketService()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
 		return
@@ -40,9 +40,9 @@ func TicketVectorSearch(c *gin.Context) {
 		return
 	}
 
-	var tickets db.TicketSearchTicketsIdsResults
+	var tickets milvus.TicketSearchTicketsIdsResults
 	if searchType == entireTicketContent {
-		ticketService, err := db.NewTicketService()
+		ticketService, err := milvus.NewTicketService()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
 			return
@@ -54,7 +54,7 @@ func TicketVectorSearch(c *gin.Context) {
 			return
 		}
 	} else if searchType == singleMessages {
-		ticketMessage, err := db.NewTicketMessage()
+		ticketMessage, err := milvus.NewTicketMessage()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
 			return

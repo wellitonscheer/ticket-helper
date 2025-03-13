@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -10,7 +12,7 @@ type EmailConfig struct {
 	User     string
 	Password string
 	Host     string
-	Port     string
+	Port     int
 	From     string
 }
 
@@ -55,8 +57,8 @@ func NewConfig() Config {
 
 func ReadCommonConfig() CommonConfig {
 	return CommonConfig{
-		MyIp:    os.Getenv("BASE_URL"),
-		BaseUrl: os.Getenv("MY_IP"),
+		MyIp:    os.Getenv("MY_IP"),
+		BaseUrl: os.Getenv("BASE_URL"),
 		AppEnv:  os.Getenv("APP_ENV"),
 		GinPort: os.Getenv("GIN_PORT"),
 	}
@@ -78,11 +80,16 @@ func ReadEmbedConfig() EmbedConfig {
 }
 
 func ReadEmailConfig() EmailConfig {
+	port, err := strconv.Atoi(os.Getenv("EMAIL_SERVER_PORT"))
+	if err != nil {
+		panic(fmt.Errorf("failed to convert port: %w", err))
+	}
+
 	return EmailConfig{
 		User:     os.Getenv("EMAIL_SERVER_USER"),
 		Password: os.Getenv("EMAIL_SERVER_PASSWORD"),
 		Host:     os.Getenv("EMAIL_SERVER_HOST"),
-		Port:     os.Getenv("EMAIL_SERVER_PORT"),
+		Port:     port,
 		From:     os.Getenv("EMAIL_FROM"),
 	}
 }

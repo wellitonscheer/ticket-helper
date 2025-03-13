@@ -1,4 +1,4 @@
-package db
+package milvus
 
 import (
 	"errors"
@@ -27,12 +27,12 @@ func newUser(userName *string) error {
 		return fmt.Errorf("failed to connect to milvus: %v", err.Error())
 	}
 
-	collExists, err := milvus.client.HasCollection(milvus.ctx, userCollName)
+	collExists, err := milvus.Client.HasCollection(milvus.Ctx, userCollName)
 	if err != nil {
 		return fmt.Errorf("failed to check collection exists: %v", err.Error())
 	}
 	// if collExists {
-	// 	_ = milvus.c.DropCollection(milvus.ctx, userCollName)
+	// 	_ = milvus.c.DropCollection(milvus.Ctx, userCollName)
 	// }
 	if !collExists {
 		err = createUserCollection()
@@ -41,7 +41,7 @@ func newUser(userName *string) error {
 		}
 	}
 
-	collections, err := milvus.client.ListCollections(milvus.ctx)
+	collections, err := milvus.Client.ListCollections(milvus.Ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list collections: %v", err.Error())
 	}
@@ -60,12 +60,12 @@ func newUser(userName *string) error {
 	userNameColumn := entity.NewColumnVarChar("userName", []string{*userName})
 	vectorColumn := entity.NewColumnFloatVector("vector", 1024, embeddedUserName)
 
-	_, err = milvus.client.Insert(milvus.ctx, userCollName, "", userNameColumn, vectorColumn)
+	_, err = milvus.Client.Insert(milvus.Ctx, userCollName, "", userNameColumn, vectorColumn)
 	if err != nil {
 		return fmt.Errorf("failed to insert user: %v", err.Error())
 	}
 
-	err = milvus.client.Flush(milvus.ctx, userCollName, false)
+	err = milvus.Client.Flush(milvus.Ctx, userCollName, false)
 	if err != nil {
 		return fmt.Errorf("failed to flush collection: %v", err.Error())
 	}
@@ -80,7 +80,7 @@ func newUser(userName *string) error {
 // 	}
 
 // 	aaa := entity.SearchParam{}
-// 	milvus.c.Search(milvus.ctx, userCollName, nil, nil, []string{"userName"}, make([][]float32, 0, 1024), "vector", entity.COSINE, nil)
+// 	milvus.c.Search(milvus.Ctx, userCollName, nil, nil, []string{"userName"}, make([][]float32, 0, 1024), "vector", entity.COSINE, nil)
 
 // 	return nil
 // }
@@ -120,7 +120,7 @@ func createUserCollection() error {
 			},
 		},
 	}
-	err = milvus.client.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
+	err = milvus.Client.CreateCollection(milvus.Ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
 		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
@@ -130,12 +130,12 @@ func createUserCollection() error {
 		return fmt.Errorf("fail to create ivf flat index: %v", err.Error())
 	}
 
-	err = milvus.client.CreateIndex(milvus.ctx, userCollName, "vector", idx, false)
+	err = milvus.Client.CreateIndex(milvus.Ctx, userCollName, "vector", idx, false)
 	if err != nil {
 		return fmt.Errorf("fail to create index: %v", err.Error())
 	}
 
-	err = milvus.client.LoadCollection(milvus.ctx, userCollName, false)
+	err = milvus.Client.LoadCollection(milvus.Ctx, userCollName, false)
 	if err != nil {
 		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}

@@ -5,11 +5,15 @@ import (
 	"fmt"
 )
 
-func ConectToSqliteDB() (*sql.DB, error) {
+func NewSqliteConnection() *sql.DB {
+	fmt.Println("Connecting to sqlite now.")
+
 	db, err := sql.Open("sqlite3", "./ticket-helper.db")
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to sqlLite db: %v", err.Error())
+		panic(fmt.Errorf("failed to connect to sqlLite db: %v", err.Error()))
 	}
 
-	return db, nil
+	fmt.Println("Sqlite connected.")
+
+	return db
 }

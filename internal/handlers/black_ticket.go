@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wellitonscheer/ticket-helper/internal/db"
+	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 )
 
 func BlackTicketInsertAll(c *gin.Context) {
-	blackTicket, err := db.NewBlackTicket()
+	blackTicket, err := milvus.NewBlackTicket()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get black ticket service: %s", err.Error())})
 		return

@@ -1,4 +1,4 @@
-package db
+package milvus
 
 import (
 	"encoding/json"
