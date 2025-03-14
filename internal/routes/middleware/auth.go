@@ -1,14 +1,16 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wellitonscheer/ticket-helper/internal/sqlite"
+	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite/liteservi"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(appContext context.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		_redirect := func() {
 			if c.GetHeader("HX-Request") == "true" {
@@ -23,7 +25,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		authToken, err := c.Cookie("session_token")
 		if err != nil {
-			if err == http.ErrNoCookie {
+			if errors.Is(err, http.ErrNoCookie) {
 				_redirect()
 				return
 			}
@@ -38,24 +40,17 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		sqliteLogin, err := sqlite.NewSqliteLogin()
+		sessionService := liteservi.NewSessionService(appContext)
+		session, err := sessionService.GetByToken(authToken)
 		if err != nil {
-			fmt.Printf("error to create sqlite login service: %v", err.Error())
+			fmt.Printf("invalid session: %v", err.Error())
 
 			c.Status(http.StatusInternalServerError)
 			c.Abort()
 			return
 		}
 
-		isValidSession, err := sqliteLogin.IsValidSession(authToken)
-		if err != nil {
-			fmt.Printf("error validate session: %v", err.Error())
-
-			_redirect()
-			return
-		}
-
-		if !isValidSession {
+		if !session.IsValid() {
 			_redirect()
 			return
 		}

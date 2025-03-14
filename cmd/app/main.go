@@ -77,7 +77,7 @@ func main() {
 	})
 
 	auth := r.Group("/")
-	auth.Use(middleware.AuthMiddleware())
+	auth.Use(middleware.AuthMiddleware(appContext))
 	{
 		auth.GET("/", handlers.Index)
 		auth.GET("/user/:name", handlers.UserNew)
