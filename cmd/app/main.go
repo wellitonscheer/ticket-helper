@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wellitonscheer/ticket-helper/internal/config"
 	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
 	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
-	"github.com/wellitonscheer/ticket-helper/internal/sqlite"
 )
 
 func main() {
@@ -30,6 +30,9 @@ func main() {
 	milvus := milvus.NewMilvusConnection(&conf)
 	defer milvus.Client.Close()
 	defer milvus.Cancel()
+
+	sqliteMigrations := sqlite.NewSqliteMigrations(sqliteDb)
+	sqliteMigrations.RunMigrations()
 
 	appContext := context.AppContext{
 		Config: &conf,

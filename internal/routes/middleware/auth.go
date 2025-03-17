@@ -30,6 +30,7 @@ func AuthMiddleware(appContext context.AppContext) gin.HandlerFunc {
 				return
 			}
 
+			fmt.Printf("failed to get session cookie: %v", err)
 			c.Status(http.StatusBadRequest)
 			c.Abort()
 			return
@@ -43,10 +44,9 @@ func AuthMiddleware(appContext context.AppContext) gin.HandlerFunc {
 		sessionService := liteservi.NewSessionService(appContext)
 		session, err := sessionService.GetByToken(authToken)
 		if err != nil {
-			fmt.Printf("invalid session: %v", err.Error())
+			fmt.Printf("failed to get session by token: %v", err)
 
-			c.Status(http.StatusInternalServerError)
-			c.Abort()
+			_redirect()
 			return
 		}
 
