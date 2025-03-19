@@ -28,22 +28,6 @@ func (l LoginHandlers) LoginPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "login", gin.H{})
 }
 
-func (l LoginHandlers) InsertAuthorizedEmails(c *gin.Context) {
-	sqliteLogin, err := sqlite.NewSqliteLogin()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed initialize login: %v", err.Error())})
-		return
-	}
-
-	err = sqliteLogin.InsertAuthorizedEmails()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to insert authorized emails: %v", err.Error())})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "done"})
-}
-
 func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
 	to := c.PostForm("email")
 	if len(to) == 0 {
@@ -114,7 +98,7 @@ func (l LoginHandlers) ValidateVefificationCode(c *gin.Context) {
 
 		sqliteLogin.CreateUserSession(email, tokenString)
 
-		c.SetCookie("session_token", tokenString, 60*60*3, "/", "caie.dev", true, true)
+		c.SetCookie("session_token", tokenString, 60*60*3, "/", "", true, true)
 	}
 
 	if c.GetHeader("HX-Request") == "true" {

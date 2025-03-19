@@ -2,9 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -21,39 +19,6 @@ func NewSqliteLogin() (*LiteLogin, error) {
 	return &LiteLogin{
 		db: db,
 	}, nil
-}
-
-func (l *LiteLogin) InsertAuthorizedEmails() error {
-	rawData, err := os.ReadFile("./data_source/authorized_emails.json")
-	if err != nil {
-		return fmt.Errorf("failed to read from json file: %v", err.Error())
-	}
-
-	var authorizedEmails []string
-	err = json.Unmarshal(rawData, &authorizedEmails)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal authorized emails content: %v", err.Error())
-	}
-
-	sqlStmt := `
-		CREATE TABLE IF NOT EXISTS authorized_emails (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			email TEXT UNIQUE NOT NULL
-		);
-	`
-	_, err = l.db.Exec(sqlStmt)
-	if err != nil {
-		return fmt.Errorf("failed to create authorized emails table: %v: %s", err.Error(), sqlStmt)
-	}
-
-	for _, email := range authorizedEmails {
-		_, err = l.db.Exec("INSERT OR IGNORE INTO authorized_emails (email) VALUES (?)", email)
-		if err != nil {
-			return fmt.Errorf("failed to insert email: %v: %s", err.Error(), email)
-		}
-	}
-
-	return nil
 }
 
 func (l *LiteLogin) IsAuthorizedEmail(email string) (bool, error) {

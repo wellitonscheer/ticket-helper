@@ -44,8 +44,6 @@ func AuthMiddleware(appContext context.AppContext) gin.HandlerFunc {
 		sessionService := liteservi.NewSessionService(appContext)
 		session, err := sessionService.GetByToken(authToken)
 		if err != nil {
-			fmt.Printf("failed to get session by token: %v", err)
-
 			_redirect()
 			return
 		}

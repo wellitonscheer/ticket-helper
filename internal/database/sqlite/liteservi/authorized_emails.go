@@ -40,7 +40,7 @@ func (a AuthorizedEmailsService) GetByEmail(email string) (litemodel.AuthorizedE
 
 func (a AuthorizedEmailsService) IsAuthorizedEmail(email string) bool {
 	if _, err := a.GetByEmail(email); err != nil {
-		fmt.Printf("failed to verify if authorized: %w", err)
+		fmt.Printf("failed to verify if authorized: %v", err)
 		return false
 	}
 

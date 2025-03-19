@@ -31,14 +31,14 @@ func main() {
 	defer milvus.Client.Close()
 	defer milvus.Cancel()
 
-	sqliteMigrations := sqlite.NewSqliteMigrations(sqliteDb)
-	sqliteMigrations.RunMigrations()
-
 	appContext := context.AppContext{
 		Config: &conf,
 		Sqlite: sqliteDb,
 		Milvus: milvus,
 	}
+
+	sqliteMigrations := sqlite.NewSqliteMigrations(appContext)
+	sqliteMigrations.RunMigrations()
 
 	r := gin.Default()
 
@@ -58,7 +58,6 @@ func main() {
 	login := r.Group("/login")
 	{
 		login.GET("/", loginHandlers.LoginPage)
-		login.GET("/insert-authorized-emails", loginHandlers.InsertAuthorizedEmails)
 		login.POST("/send-verification", loginHandlers.SendEmailVefificationCode)
 		login.POST("/validate-verification", loginHandlers.ValidateVefificationCode)
 	}

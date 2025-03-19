@@ -1,12 +1,17 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
 )
+
+type DataConfig struct {
+	AuthEmailsPath string
+}
 
 type EmailConfig struct {
 	User     string
@@ -39,6 +44,7 @@ type Config struct {
 	Milvus MilvusConfig
 	Embed  EmbedConfig
 	Email  EmailConfig
+	Data   DataConfig
 }
 
 func NewConfig() Config {
@@ -52,6 +58,7 @@ func NewConfig() Config {
 		Milvus: ReadMilvusConfig(),
 		Embed:  ReadEmbedConfig(),
 		Email:  ReadEmailConfig(),
+		Data:   ReadDataConfig(),
 	}
 }
 
@@ -91,6 +98,27 @@ func ReadEmailConfig() EmailConfig {
 		Host:     os.Getenv("EMAIL_SERVER_HOST"),
 		Port:     port,
 		From:     os.Getenv("EMAIL_FROM"),
+	}
+}
+
+func ReadDataConfig() DataConfig {
+	const defaultAuthEmailsPath = "./data_source/authorized_emails.json"
+
+	authEmailsPath := os.Getenv("AUTH_EMAILS_PATH")
+	if authEmailsPath == "" {
+		authEmailsPath = defaultAuthEmailsPath
+	}
+
+	if _, err := os.Stat(authEmailsPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			panic(fmt.Sprintf("auth emails file do not exists: %v", err))
+		}
+
+		panic(fmt.Sprintf("failed to test if auth emails file exist: %v", err))
+	}
+
+	return DataConfig{
+		AuthEmailsPath: authEmailsPath,
 	}
 }
 
