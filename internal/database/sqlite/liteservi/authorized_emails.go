@@ -26,7 +26,7 @@ func (a AuthorizedEmailsService) GetByEmail(email string) (litemodel.AuthorizedE
 
 	sqlStmt := "SELECT * FROM authorized_emails WHERE email = ?"
 
-	err := a.db.QueryRow(sqlStmt, email).Scan(&authEmail)
+	err := a.db.QueryRow(sqlStmt, email).Scan(&authEmail.Id, &authEmail.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return authEmail, errors.New("no authorized email found")

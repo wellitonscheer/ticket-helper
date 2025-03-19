@@ -36,7 +36,7 @@ func AuthMiddleware(appContext context.AppContext) gin.HandlerFunc {
 			return
 		}
 
-		if len(authToken) == 0 {
+		if authToken == "" {
 			_redirect()
 			return
 		}

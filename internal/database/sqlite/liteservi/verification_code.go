@@ -10,16 +10,16 @@ import (
 )
 
 type VerificationCodeService struct {
-	db         *sql.DB
-	appContext context.AppContext
-	ttl        time.Duration
+	db                  *sql.DB
+	appContext          context.AppContext
+	verificCodeLifetime time.Duration
 }
 
 func NewVerificationCodeService(appContext context.AppContext) VerificationCodeService {
 	return VerificationCodeService{
-		db:         appContext.Sqlite,
-		appContext: appContext,
-		ttl:        time.Minute * 15,
+		db:                  appContext.Sqlite,
+		appContext:          appContext,
+		verificCodeLifetime: appContext.Config.Common.LoginCodeLifetimeSec,
 	}
 }
 
@@ -35,7 +35,7 @@ func (v VerificationCodeService) Add(verification litemodel.VerificationCode) er
 }
 
 func (v VerificationCodeService) NewVerificationCode(email string, code int) error {
-	expAt := time.Now().UTC().Add(v.ttl)
+	expAt := time.Now().UTC().Add(v.verificCodeLifetime)
 
 	verification := litemodel.VerificationCode{
 		Email:      email,

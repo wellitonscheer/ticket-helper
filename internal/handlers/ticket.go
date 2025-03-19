@@ -35,7 +35,7 @@ func TicketVectorSearch(c *gin.Context) {
 	searchInput := c.PostForm("search-input")
 	searchType := c.PostForm("search-type")
 
-	if len(searchInput) == 0 || len(searchType) == 0 {
+	if searchInput == "" || searchType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search data"})
 		return
 	}

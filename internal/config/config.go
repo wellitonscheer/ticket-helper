@@ -5,8 +5,14 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
+)
+
+const (
+	defAuthEmailsPath         string        = "./data_source/authorized_emails.json"
+	defVerificCodeLifetimeSec time.Duration = time.Second * 900
 )
 
 type DataConfig struct {
@@ -33,10 +39,11 @@ type MilvusConfig struct {
 }
 
 type CommonConfig struct {
-	MyIp    string
-	BaseUrl string
-	AppEnv  string
-	GinPort string
+	MyIp                 string
+	BaseUrl              string
+	AppEnv               string
+	GinPort              string
+	LoginCodeLifetimeSec time.Duration // in seconds
 }
 
 type Config struct {
@@ -63,11 +70,24 @@ func NewConfig() Config {
 }
 
 func ReadCommonConfig() CommonConfig {
+	verificCodeLifetimeSec := defVerificCodeLifetimeSec
+
+	codeLifetimeEnv := os.Getenv("VERIFIC_CODE_LIFETIME_SEC")
+	if codeLifetimeEnv != "" {
+		verificCodeLifetimeInt, err := strconv.Atoi(codeLifetimeEnv)
+		if err != nil {
+			panic(fmt.Sprintf("failed to convert VERIFIC_CODE_LIFETIME_SEC to int: %v", err))
+		}
+
+		verificCodeLifetimeSec = time.Duration(verificCodeLifetimeInt) * time.Second
+	}
+
 	return CommonConfig{
-		MyIp:    os.Getenv("MY_IP"),
-		BaseUrl: os.Getenv("BASE_URL"),
-		AppEnv:  os.Getenv("APP_ENV"),
-		GinPort: os.Getenv("GIN_PORT"),
+		MyIp:                 os.Getenv("MY_IP"),
+		BaseUrl:              os.Getenv("BASE_URL"),
+		AppEnv:               os.Getenv("APP_ENV"),
+		GinPort:              os.Getenv("GIN_PORT"),
+		LoginCodeLifetimeSec: verificCodeLifetimeSec,
 	}
 }
 
@@ -102,11 +122,9 @@ func ReadEmailConfig() EmailConfig {
 }
 
 func ReadDataConfig() DataConfig {
-	const defaultAuthEmailsPath = "./data_source/authorized_emails.json"
-
 	authEmailsPath := os.Getenv("AUTH_EMAILS_PATH")
 	if authEmailsPath == "" {
-		authEmailsPath = defaultAuthEmailsPath
+		authEmailsPath = defAuthEmailsPath
 	}
 
 	if _, err := os.Stat(authEmailsPath); err != nil {

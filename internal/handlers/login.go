@@ -29,15 +29,15 @@ func (l LoginHandlers) LoginPage(c *gin.Context) {
 }
 
 func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
-	to := c.PostForm("email")
-	if len(to) == 0 {
+	email := c.PostForm("email")
+	if email == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid email"})
 		return
 	}
 
 	authoEmailService := liteservi.NewAuthorizedEmailsService(l.appContext)
 
-	authorized := authoEmailService.IsAuthorizedEmail(to)
+	authorized := authoEmailService.IsAuthorizedEmail(email)
 	if !authorized {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "email not authorized to login"})
 		return
@@ -47,25 +47,25 @@ func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
 
 	veriCodeService := liteservi.NewVerificationCodeService(l.appContext)
 
-	err := veriCodeService.NewVerificationCode(to, verificationCode)
+	err := veriCodeService.NewVerificationCode(email, verificationCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to save verification code: %v", err.Error())})
 		return
 	}
 
-	err = utils.SendEmail(l.appContext.Config.Email, to, "verification code", fmt.Sprintf("your code is %d", verificationCode))
+	err = utils.SendEmail(l.appContext.Config.Email, email, "verification code", fmt.Sprintf("your code is %d", verificationCode))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to send verification code: %v", err.Error())})
 		return
 	}
 
-	c.HTML(http.StatusOK, "sent-verification-code-success", gin.H{"Email": to})
+	c.HTML(http.StatusOK, "sent-verification-code-success", gin.H{"Email": email})
 }
 
 func (l LoginHandlers) ValidateVefificationCode(c *gin.Context) {
 	email := c.PostForm("email")
 	code := c.PostForm("code")
-	if len(email) == 0 || len(code) == 0 {
+	if email == "" || code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid email or verification code"})
 		return
 	}
