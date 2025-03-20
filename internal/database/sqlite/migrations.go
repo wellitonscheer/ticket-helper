@@ -21,6 +21,7 @@ func NewSqliteMigrations(appContext context.AppContext) SqliteMigrations {
 func (s SqliteMigrations) RunMigrations() {
 	s.RunSessionMigration()
 	s.RunAuthorizedEmailsMigration()
+	s.RunVerificationCodeMigration()
 }
 
 func (s SqliteMigrations) RunSessionMigration() {
@@ -66,5 +67,20 @@ func (s SqliteMigrations) RunAuthorizedEmailsMigration() {
 		if err != nil {
 			panic(fmt.Sprintf("failed to insert email: %v: email used %s", err.Error(), email))
 		}
+	}
+}
+
+func (s SqliteMigrations) RunVerificationCodeMigration() {
+	createTbStmt := `
+		CREATE TABLE IF NOT EXISTS verification_code (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			email TEXT NOT NULL,
+			code INTEGER NOT NULL,
+			expires_at DATETIME NOT NULL
+		);
+	`
+	_, err := s.appContext.Sqlite.Exec(createTbStmt)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create verification code table: %v", err.Error()))
 	}
 }

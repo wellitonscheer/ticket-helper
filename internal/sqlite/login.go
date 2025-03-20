@@ -34,30 +34,6 @@ func (l *LiteLogin) IsAuthorizedEmail(email string) (bool, error) {
 	return authorized, nil
 }
 
-func (l *LiteLogin) InsertVerificationCode(email string, code int) error {
-	createTbStmt := `
-		CREATE TABLE IF NOT EXISTS verification_code (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			email TEXT NOT NULL,
-			code INTEGER NOT NULL,
-			expires_at DATETIME NOT NULL
-		);
-	`
-	_, err := l.db.Exec(createTbStmt)
-	if err != nil {
-		return fmt.Errorf("failed to create verification code table: %v: %s", err.Error(), createTbStmt)
-	}
-
-	insertCodeStmt := "INSERT INTO verification_code (email, code, expires_at) VALUES (?, ?, ?)"
-
-	_, err = l.db.Exec(insertCodeStmt, email, code, time.Now().Add(time.Minute*15))
-	if err != nil {
-		return fmt.Errorf("failed to insert verification code: %v: %s: %s: %d", err.Error(), insertCodeStmt, email, code)
-	}
-
-	return nil
-}
-
 type VerificationCode struct {
 	Id         int
 	Email      string
