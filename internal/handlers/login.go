@@ -82,6 +82,10 @@ func (l LoginHandlers) LoginWithCode(c *gin.Context) {
 		return
 	}
 
+	if err = verificCodeServ.DeleteById(verificCode.Id); err != nil {
+		fmt.Printf("failed to delete used verification code: %+v: %v", verificCode, err)
+	}
+
 	sessionServi := liteservi.NewSessionService(l.appContext)
 	token, err := sessionServi.NewSessionByEmail(email)
 	if err != nil {

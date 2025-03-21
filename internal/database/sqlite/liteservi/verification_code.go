@@ -50,6 +50,17 @@ func (v VerificationCodeService) Add(verification litemodel.VerificationCode) er
 	return nil
 }
 
+func (v VerificationCodeService) DeleteById(id int) error {
+	deleteCodeStmt := "DELETE FROM verification_code WHERE id = ?"
+
+	_, err := v.db.Exec(deleteCodeStmt, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete verfication code: %w: id: %s", err, id)
+	}
+
+	return nil
+}
+
 func (v VerificationCodeService) NewVerificationCode(email string, code int) error {
 	expAt := time.Now().UTC().Add(v.verificCodeLifetime)
 

@@ -29,13 +29,13 @@ func (s SessionService) GetByToken(token string) (litemodel.Session, error) {
 	var session litemodel.Session
 
 	sqlStmt := "SELECT * FROM session WHERE token = ?;"
-	err := s.db.QueryRow(sqlStmt, token).Scan(&session)
+	err := s.db.QueryRow(sqlStmt, token).Scan(&session.Id, &session.Email, &session.Token, &session.Expires_at)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return session, fmt.Errorf("no session found")
 		}
 
-		return session, fmt.Errorf("failed to select session: %v: %s: %s", err.Error(), sqlStmt, token)
+		return session, fmt.Errorf("failed to select session: %w: %s: %s", err, sqlStmt, token)
 	}
 
 	return session, nil
