@@ -34,7 +34,7 @@ func NewMilvusConnection(conf *config.Config) *MilvusClient {
 	})
 	if err != nil {
 		cancel()
-		panic(err)
+		log.Fatal(err)
 	}
 	fmt.Println("Milvus connected.")
 

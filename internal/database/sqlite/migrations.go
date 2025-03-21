@@ -3,6 +3,7 @@ package sqlite
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/wellitonscheer/ticket-helper/internal/context"
@@ -35,7 +36,7 @@ func (s SqliteMigrations) RunSessionMigration() {
 	`
 
 	if _, err := s.appContext.Sqlite.Exec(createTbStmt); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -48,24 +49,24 @@ func (s SqliteMigrations) RunAuthorizedEmailsMigration() {
 	`
 	_, err := s.appContext.Sqlite.Exec(createTbStmt)
 	if err != nil {
-		panic(fmt.Sprintf("failed to create authorized emails table: %v: sql: %s", err.Error(), createTbStmt))
+		log.Fatal(fmt.Sprintf("failed to create authorized emails table: %v: sql: %s", err.Error(), createTbStmt))
 	}
 
 	rawData, err := os.ReadFile(s.appContext.Config.Data.AuthEmailsPath)
 	if err != nil {
-		panic(fmt.Sprintf("failed to read from json file: %v", err.Error()))
+		log.Fatal(fmt.Sprintf("failed to read from json file: %v", err.Error()))
 	}
 
 	var authorizedEmails []string
 	err = json.Unmarshal(rawData, &authorizedEmails)
 	if err != nil {
-		panic(fmt.Sprintf("failed to unmarshal authorized emails content: %v", err.Error()))
+		log.Fatal(fmt.Sprintf("failed to unmarshal authorized emails content: %v", err.Error()))
 	}
 
 	for _, email := range authorizedEmails {
 		_, err = s.appContext.Sqlite.Exec("INSERT OR IGNORE INTO authorized_emails (email) VALUES (?)", email)
 		if err != nil {
-			panic(fmt.Sprintf("failed to insert email: %v: email used %s", err.Error(), email))
+			log.Fatal(fmt.Sprintf("failed to insert email: %v: email used %s", err.Error(), email))
 		}
 	}
 }
@@ -81,6 +82,6 @@ func (s SqliteMigrations) RunVerificationCodeMigration() {
 	`
 	_, err := s.appContext.Sqlite.Exec(createTbStmt)
 	if err != nil {
-		panic(fmt.Sprintf("failed to create verification code table: %v", err.Error()))
+		log.Fatal(fmt.Sprintf("failed to create verification code table: %v", err.Error()))
 	}
 }

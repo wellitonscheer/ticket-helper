@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -59,7 +60,7 @@ type Config struct {
 func NewConfig() Config {
 	err := godotenv.Load()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	return Config{
@@ -78,7 +79,7 @@ func ReadCommonConfig() CommonConfig {
 	if codeLifetimeEnv != "" {
 		verificCodeLifetimeInt, err := strconv.Atoi(codeLifetimeEnv)
 		if err != nil {
-			panic(fmt.Sprintf("failed to convert VERIFIC_CODE_LIFETIME_SEC to int: %v", err))
+			log.Fatal(fmt.Sprintf("failed to convert VERIFIC_CODE_LIFETIME_SEC to int: %v", err))
 		}
 
 		verificCodeLifetimeSec = time.Duration(verificCodeLifetimeInt) * time.Second
@@ -90,7 +91,7 @@ func ReadCommonConfig() CommonConfig {
 	if sessionLifetimeEnv != "" {
 		sessionLifetimeInt, err := strconv.Atoi(sessionLifetimeEnv)
 		if err != nil {
-			panic(fmt.Sprintf("failed to convert SESSION_LIFETIME_SEC to int: %v", err))
+			log.Fatal(fmt.Sprintf("failed to convert SESSION_LIFETIME_SEC to int: %v", err))
 		}
 
 		sessionLifetimeSec = time.Duration(sessionLifetimeInt) * time.Second
@@ -124,7 +125,7 @@ func ReadEmbedConfig() EmbedConfig {
 func ReadEmailConfig() EmailConfig {
 	port, err := strconv.Atoi(os.Getenv("EMAIL_SERVER_PORT"))
 	if err != nil {
-		panic(fmt.Errorf("failed to convert port: %w", err))
+		log.Fatal(fmt.Errorf("failed to convert port: %w", err))
 	}
 
 	return EmailConfig{
@@ -144,10 +145,10 @@ func ReadDataConfig() DataConfig {
 
 	if _, err := os.Stat(authEmailsPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			panic(fmt.Sprintf("auth emails file do not exists: %v", err))
+			log.Fatal(fmt.Sprintf("auth emails file do not exists: %v", err))
 		}
 
-		panic(fmt.Sprintf("failed to test if auth emails file exist: %v", err))
+		log.Fatal(fmt.Sprintf("failed to test if auth emails file exist: %v", err))
 	}
 
 	return DataConfig{

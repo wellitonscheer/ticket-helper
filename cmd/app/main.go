@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -89,7 +90,7 @@ func main() {
 		auth.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 
 		auth.GET("/kys", func(c *gin.Context) {
-			panic("Good bye ;-;")
+			log.Fatal("Good bye ;-;")
 		})
 	}
 

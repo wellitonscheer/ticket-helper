@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
+	"log"
 )
 
 func NewSqliteConnection() *sql.DB {
@@ -10,7 +11,7 @@ func NewSqliteConnection() *sql.DB {
 
 	db, err := sql.Open("sqlite3", "./ticket-helper.db")
 	if err != nil {
-		panic(fmt.Errorf("failed to connect to sqlLite db: %v", err.Error()))
+		log.Fatal(fmt.Errorf("failed to connect to sqlLite db: %v", err.Error()))
 	}
 
 	fmt.Println("Sqlite connected.")
