@@ -10,30 +10,6 @@ type LiteLogin struct {
 	db *sql.DB
 }
 
-func NewSqliteLogin() (*LiteLogin, error) {
-	db, err := sql.Open("sqlite3", "./ticket-helper.db")
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to sqlLite db: %v", err.Error())
-	}
-
-	return &LiteLogin{
-		db: db,
-	}, nil
-}
-
-func (l *LiteLogin) IsAuthorizedEmail(email string) (bool, error) {
-	var authorized bool
-
-	sqlStmt := "SELECT EXISTS(SELECT 1 FROM authorized_emails WHERE email = ?)"
-
-	err := l.db.QueryRow(sqlStmt, email).Scan(&authorized)
-	if err != nil {
-		return false, fmt.Errorf("failed to verify if authorized: %v: %s: %s", err.Error(), sqlStmt, email)
-	}
-
-	return authorized, nil
-}
-
 type VerificationCode struct {
 	Id         int
 	Email      string
@@ -70,7 +46,7 @@ func (l *LiteLogin) CreateUserSession(email, token string) error {
 		CREATE TABLE IF NOT EXISTS session (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			email TEXT NOT NULL,
-			token TEXT NOT NULL,
+			token TEXT NOT NULL,	
 			expires_at DATETIME NOT NULL
 		);
 	`

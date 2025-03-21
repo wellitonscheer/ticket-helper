@@ -23,6 +23,22 @@ func NewVerificationCodeService(appContext context.AppContext) VerificationCodeS
 	}
 }
 
+func (v VerificationCodeService) GetByEmailCode(email string, code int) (litemodel.VerificationCode, error) {
+	var verification litemodel.VerificationCode
+
+	findCodeStmt := "SELECT * FROM verification_code WHERE email = ? AND code = ?"
+	err := v.db.QueryRow(findCodeStmt, email, code).Scan(&verification.Id, &verification.Email, &verification.Code, &verification.Expires_at)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return verification, fmt.Errorf("verification code not found")
+		}
+
+		return verification, fmt.Errorf("failed to select verification code: %w: email: %s: code %d", err.Error(), findCodeStmt, email, code)
+	}
+
+	return verification, nil
+}
+
 func (v VerificationCodeService) Add(verification litemodel.VerificationCode) error {
 	insertCodeStmt := "INSERT INTO verification_code (email, code, expires_at) VALUES (?, ?, ?)"
 

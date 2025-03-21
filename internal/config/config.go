@@ -12,7 +12,8 @@ import (
 
 const (
 	defAuthEmailsPath         string        = "./data_source/authorized_emails.json"
-	defVerificCodeLifetimeSec time.Duration = time.Second * 900
+	defVerificCodeLifetimeSec time.Duration = time.Second * 60 * 15
+	defSessionLifetimeSec     time.Duration = time.Second * 60 * 60 * 3
 )
 
 type DataConfig struct {
@@ -44,6 +45,7 @@ type CommonConfig struct {
 	AppEnv               string
 	GinPort              string
 	LoginCodeLifetimeSec time.Duration // in seconds
+	SessionLifetimeSec   time.Duration // in seconds
 }
 
 type Config struct {
@@ -82,12 +84,25 @@ func ReadCommonConfig() CommonConfig {
 		verificCodeLifetimeSec = time.Duration(verificCodeLifetimeInt) * time.Second
 	}
 
+	sessionLifetimeSec := defSessionLifetimeSec
+
+	sessionLifetimeEnv := os.Getenv("SESSION_LIFETIME_SEC")
+	if sessionLifetimeEnv != "" {
+		sessionLifetimeInt, err := strconv.Atoi(sessionLifetimeEnv)
+		if err != nil {
+			panic(fmt.Sprintf("failed to convert SESSION_LIFETIME_SEC to int: %v", err))
+		}
+
+		sessionLifetimeSec = time.Duration(sessionLifetimeInt) * time.Second
+	}
+
 	return CommonConfig{
 		MyIp:                 os.Getenv("MY_IP"),
 		BaseUrl:              os.Getenv("BASE_URL"),
 		AppEnv:               os.Getenv("APP_ENV"),
 		GinPort:              os.Getenv("GIN_PORT"),
 		LoginCodeLifetimeSec: verificCodeLifetimeSec,
+		SessionLifetimeSec:   sessionLifetimeSec,
 	}
 }
 

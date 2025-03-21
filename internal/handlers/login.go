@@ -6,11 +6,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite/liteservi"
-	"github.com/wellitonscheer/ticket-helper/internal/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
 
@@ -62,17 +60,11 @@ func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
 	c.HTML(http.StatusOK, "sent-verification-code-success", gin.H{"Email": email})
 }
 
-func (l LoginHandlers) ValidateVefificationCode(c *gin.Context) {
+func (l LoginHandlers) LoginWithCode(c *gin.Context) {
 	email := c.PostForm("email")
 	code := c.PostForm("code")
 	if email == "" || code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid email or verification code"})
-		return
-	}
-
-	sqliteLogin, err := sqlite.NewSqliteLogin()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed initialize login: %v", err.Error())})
 		return
 	}
 
@@ -82,24 +74,22 @@ func (l LoginHandlers) ValidateVefificationCode(c *gin.Context) {
 		return
 	}
 
-	isValid, err := sqliteLogin.IsValidVefificationCode(email, intCode)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to validate verification code: %v", err.Error())})
+	verificCodeServ := liteservi.NewVerificationCodeService(l.appContext)
+
+	verificCode, err := verificCodeServ.GetByEmailCode(email, intCode)
+	if err != nil || !verificCode.IsValid() {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "invalid verification code"})
 		return
 	}
 
-	if isValid {
-		tokenUuid, err := uuid.NewRandom()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to generate uuid: %v", err.Error())})
-			return
-		}
-		tokenString := tokenUuid.String()
-
-		sqliteLogin.CreateUserSession(email, tokenString)
-
-		c.SetCookie("session_token", tokenString, 60*60*3, "/", "", true, true)
+	sessionServi := liteservi.NewSessionService(l.appContext)
+	token, err := sessionServi.NewSessionByEmail(email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "failed to create session"})
+		return
 	}
+
+	c.SetCookie("session_token", token, int(l.appContext.Config.Common.SessionLifetimeSec), "/", "", true, true)
 
 	if c.GetHeader("HX-Request") == "true" {
 		c.Header("HX-Redirect", "/")
