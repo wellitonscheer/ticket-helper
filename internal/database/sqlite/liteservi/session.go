@@ -32,10 +32,10 @@ func (s SessionService) GetByToken(token string) (litemodel.Session, error) {
 	err := s.db.QueryRow(sqlStmt, token).Scan(&session.Id, &session.Email, &session.Token, &session.Expires_at)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return session, fmt.Errorf("no session found")
+			return session, fmt.Errorf("no session found (token=%s)")
 		}
 
-		return session, fmt.Errorf("failed to select session: %w: %s: %s", err, sqlStmt, token)
+		return session, fmt.Errorf("failed to select session (token=%s): %+v", token, err)
 	}
 
 	return session, nil
@@ -46,7 +46,7 @@ func (s SessionService) Add(session litemodel.Session) error {
 
 	_, err := s.db.Exec(insertSessionStmt, session.Email, session.Token, session.Expires_at)
 	if err != nil {
-		return fmt.Errorf("failed to insert session: %w: %+v", err, session)
+		return fmt.Errorf("failed to insert session (session=%+v): %v", session, err)
 	}
 
 	return nil

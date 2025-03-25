@@ -12,9 +12,9 @@ func UserNew(c *gin.Context) {
 	user := c.Params.ByName("name")
 	err := milvus.User.NewUser(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to create user: %s", err.Error())})
+		c.String(http.StatusInternalServerError, fmt.Sprintf("failed to create user: %s", err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "user": user})
+	c.String(http.StatusOK, user)
 }

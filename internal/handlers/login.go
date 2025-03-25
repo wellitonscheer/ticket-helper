@@ -29,7 +29,11 @@ func (l LoginHandlers) LoginPage(c *gin.Context) {
 func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
 	email := c.PostForm("email")
 	if email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid email"})
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusBadRequest,
+			LogMsg:  "invalid email",
+			UserMsg: "invalid email",
+		})
 		return
 	}
 
@@ -37,7 +41,11 @@ func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
 
 	authorized := authoEmailService.IsAuthorizedEmail(email)
 	if !authorized {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "email not authorized to login"})
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusForbidden,
+			LogMsg:  fmt.Sprintf("email not authorized to login (email=%s)\n", email),
+			UserMsg: "email not authorized to login",
+		})
 		return
 	}
 
@@ -47,13 +55,21 @@ func (l LoginHandlers) SendEmailVefificationCode(c *gin.Context) {
 
 	err := veriCodeService.NewVerificationCode(email, verificationCode)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to save verification code: %v", err.Error())})
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("failed to save verification code (email=%s, verificationCode=%d): %v\n", email, verificationCode, err),
+			UserMsg: "failed to send verification code",
+		})
 		return
 	}
 
 	err = utils.SendEmail(l.appContext.Config.Email, email, "verification code", fmt.Sprintf("your code is %d", verificationCode))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to send verification code: %v", err.Error())})
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("failed to send email with verification code (email=%s, verificationCode=%d): %v\n", email, verificationCode, err),
+			UserMsg: "failed to send email with verification code",
+		})
 		return
 	}
 
@@ -64,32 +80,57 @@ func (l LoginHandlers) LoginWithCode(c *gin.Context) {
 	email := c.PostForm("email")
 	code := c.PostForm("code")
 	if email == "" || code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid email or verification code"})
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusBadRequest,
+			LogMsg:  fmt.Sprintf("invalid email or verification code (email=%s, code=%s)\n", email, code),
+			UserMsg: "invalid email or verification code",
+		})
 		return
 	}
 
 	intCode, err := strconv.Atoi(code)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to convert code to number: %v", err.Error())})
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("failed to convert code to number (code=%s): %v\n", code, err),
+			UserMsg: "failed to verify code",
+		})
 		return
 	}
 
 	verificCodeServ := liteservi.NewVerificationCodeService(l.appContext)
 
 	verificCode, err := verificCodeServ.GetByEmailCode(email, intCode)
-	if err != nil || !verificCode.IsValid() {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "invalid verification code"})
+	if err != nil {
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("failed to get verification code (email=%s, code=%d): %v\n", email, intCode, err),
+			UserMsg: "invalid verification code",
+		})
+		return
+	}
+
+	if !verificCode.IsValid() {
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusUnauthorized,
+			LogMsg:  fmt.Sprintf("invalid verification code (verificCode=%+v)\n", verificCode),
+			UserMsg: "invalid verification code",
+		})
 		return
 	}
 
 	if err = verificCodeServ.DeleteById(verificCode.Id); err != nil {
-		fmt.Printf("failed to delete used verification code: %+v: %v", verificCode, err)
+		fmt.Printf("failed to delete used verification code (verification code entry=%+v): %v", verificCode, err)
 	}
 
 	sessionServi := liteservi.NewSessionService(l.appContext)
 	token, err := sessionServi.NewSessionByEmail(email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "failed to create session"})
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("failed to create session (email=%s): %v", email, err),
+			UserMsg: "failed to create session",
+		})
 		return
 	}
 

@@ -18,17 +18,17 @@ const (
 func TicketInsertAll(c *gin.Context) {
 	ticketService, err := milvus.NewTicketService()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
+		c.String(http.StatusInternalServerError, fmt.Sprintf("failed create ticket service: %s", err.Error()))
 		return
 	}
 
 	err = ticketService.InsertAllTickets()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to insert tickets: %s", err.Error())})
+		c.String(http.StatusInternalServerError, fmt.Sprintf("failed to insert tickets: %s", err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	c.Status(http.StatusOK)
 }
 
 func TicketVectorSearch(c *gin.Context) {
@@ -36,7 +36,7 @@ func TicketVectorSearch(c *gin.Context) {
 	searchType := c.PostForm("search-type")
 
 	if searchInput == "" || searchType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search data"})
+		c.String(http.StatusBadRequest, "invalid search data")
 		return
 	}
 
@@ -44,38 +44,38 @@ func TicketVectorSearch(c *gin.Context) {
 	if searchType == entireTicketContent {
 		ticketService, err := milvus.NewTicketService()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed create ticket service: %s", err.Error())})
+			c.String(http.StatusInternalServerError, fmt.Sprintf("failed create ticket service: %s", err.Error()))
 			return
 		}
 
 		tickets, err = ticketService.VectorSearchTicketsIds(&searchInput)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search ticket: %s", err.Error())})
+			c.String(http.StatusInternalServerError, fmt.Sprintf("failed to search ticket: %s", err.Error()))
 			return
 		}
 	} else if searchType == singleMessages {
 		ticketMessage, err := milvus.NewTicketMessage()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
+			c.String(http.StatusInternalServerError, fmt.Sprintf("failed to get ticket message service: %s", err.Error()))
 			return
 		}
 
 		tickets, err = ticketMessage.VectorSearch(&searchInput)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to search message ticket: %s", err.Error())})
+			c.String(http.StatusInternalServerError, fmt.Sprintf("failed to search message ticket: %s", err.Error()))
 			return
 		}
 	} else if searchType == suggestReply {
 		suggested, err := llm.SuggestReply(&searchInput)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to suggest reply: %s", err.Error())})
+			c.String(http.StatusInternalServerError, fmt.Sprintf("failed to suggest reply: %s", err.Error()))
 			return
 		}
 
 		c.HTML(http.StatusOK, "suggeted-reply", gin.H{"Reply": suggested})
 		return
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid search type"})
+		c.String(http.StatusBadRequest, "invalid search type")
 		return
 	}
 

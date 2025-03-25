@@ -11,15 +11,15 @@ import (
 func TicketMessagesInsertAll(c *gin.Context) {
 	ticketMessage, err := milvus.NewTicketMessage()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to get ticket message service: %s", err.Error())})
+		c.String(http.StatusInternalServerError, fmt.Sprintf("failed to get ticket message service: %s", err.Error()))
 		return
 	}
 
 	err = ticketMessage.InsertAllTickets()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Sprintf("failed to insert ticket messages: %s", err.Error())})
+		c.String(http.StatusInternalServerError, fmt.Sprintf("failed to insert ticket messages: %s", err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	c.Status(http.StatusOK)
 }
