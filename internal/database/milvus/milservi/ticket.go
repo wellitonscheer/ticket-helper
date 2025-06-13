@@ -10,7 +10,6 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	"github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/milvus"
-	"github.com/wellitonscheer/ticket-helper/internal/service"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
@@ -55,7 +54,7 @@ func (t *TicketService) InsertAllTickets() error {
 		return fmt.Errorf("failed to read from json file: %v", err.Error())
 	}
 
-	var jsonData TicketRawData
+	var jsonData types.TicketsExportedData
 	err = json.Unmarshal(rawData, &jsonData)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal raw ticket data: %v", err.Error())
@@ -276,10 +275,11 @@ func (t *TicketService) VectorSearch(search *string) (TicketSearchResults, error
 		return nil, fmt.Errorf("'%s' collection doesnt exist", t.CollectionName)
 	}
 
-	embedInput := service.Input{
+	embedInput := client.GetTextEmbeddingsInput{
 		Inputs: []string{*search},
 	}
-	searchEmbedding, err := service.GetTextEmbeddings(&embedInput)
+	clientEmbedding := client.NewEmbeddingClient(t.AppContext)
+	searchEmbedding, err := clientEmbedding.GetTextEmbeddings(&embedInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get search embeddings: %v", err.Error())
 	}

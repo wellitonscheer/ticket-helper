@@ -63,8 +63,9 @@ func (t TicketHandlers) TicketVectorSearch(c *gin.Context) {
 	var tickets types.TicketSearchResults
 	if searchType == entireTicketContent {
 		ticketService := milservi.NewTicketService(t.appContext)
-
-		tickets, err := ticketService.VectorSearchTicketsIds(searchInput)
+		
+		var err error
+		tickets, err = ticketService.VectorSearchTicketsIds(searchInput)
 		if err != nil {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("failed to search ticket: %s", err.Error()))
 			return
