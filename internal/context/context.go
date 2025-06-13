@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/wellitonscheer/ticket-helper/internal/config"
-	"github.com/wellitonscheer/ticket-helper/internal/milvus"
+	"github.com/wellitonscheer/ticket-helper/internal/database/milvus"
 )
 
 type AppContext struct {

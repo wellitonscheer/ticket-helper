@@ -10,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wellitonscheer/ticket-helper/internal/config"
 	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
-	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
 )
 
@@ -79,11 +79,15 @@ func main() {
 
 	auth := r.Group("/")
 	auth.Use(middleware.AuthMiddleware(appContext))
+
+	ticketHandlers := handlers.NewTicketHandlers(appContext)
+	{
+		auth.POST("/tickets/search", ticketHandlers.TicketVectorSearch)
+	}
 	{
 		auth.GET("/", handlers.Index)
 		auth.GET("/user/:name", handlers.UserNew)
 		auth.GET("/tickets", handlers.TicketInsertAll)
-		auth.POST("/tickets/search", handlers.TicketVectorSearch)
 		auth.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
 		auth.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 

@@ -1,4 +1,4 @@
-package milvus
+package milservi
 
 import (
 	"encoding/json"
@@ -7,15 +7,12 @@ import (
 	"os"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/wellitonscheer/ticket-helper/internal/client"
+	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/service"
+	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
-
-type TicketSearchTicketsIdsResult struct {
-	TicketId string
-	Score    float32
-}
-
-type TicketSearchTicketsIdsResults = []TicketSearchTicketsIdsResult
 
 type TicketSearchResult struct {
 	Id            int64
@@ -27,20 +24,17 @@ type TicketSearchResult struct {
 type TicketSearchResults = []TicketSearchResult
 
 type TicketService struct {
-	Milvus         *MilvusClient
+	AppContext context.AppContext
+	Milvus         *milvus.MilvusClient
 	CollectionName string
 }
 
-func NewTicketService() (*TicketService, error) {
-	milvus, err := getMilvusInstance()
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to milvus: %v", err.Error())
-	}
-
-	return &TicketService{
-		Milvus:         milvus,
+func NewTicketService(appContext context.AppContext) TicketService {
+	return TicketService{
+		AppContext: appContext,
+		Milvus:         appContext.Milvus,
 		CollectionName: "ticket",
-	}, nil
+	}
 }
 
 func (t *TicketService) InsertAllTickets() error {
@@ -105,10 +99,11 @@ func (t *TicketService) InsertAllTickets() error {
 			continue
 		}
 
-		data := service.Input{
+		data := client.GetTextEmbeddingsInput{
 			Inputs: []string{fullBodyMessage},
 		}
-		embeddedBodyMessage, err := service.GetTextEmbeddings(&data)
+		clientEmbedding := client.NewEmbeddingClient(t.AppContext)
+		embeddedBodyMessage, err := clientEmbedding.GetTextEmbeddings(&data)
 		if err != nil {
 			return fmt.Errorf("failed to get fullBodyMessage embeddings: %v", err.Error())
 		}
@@ -177,10 +172,12 @@ func (t *TicketService) IsBlackListed(search *string) (bool, error) {
 		return false, fmt.Errorf("'%s' collection doesnt exist", "black_ticket")
 	}
 
-	embedInput := service.Input{
+	embedInput := client.GetTextEmbeddingsInput{
 		Inputs: []string{*search},
 	}
-	searchEmbedding, err := service.GetTextEmbeddings(&embedInput)
+	clientEmbedding := client.NewEmbeddingClient(t.AppContext)
+
+	searchEmbedding, err := clientEmbedding.GetTextEmbeddings(&embedInput)
 	if err != nil {
 		return false, fmt.Errorf("failed to get search embeddings: %v", err.Error())
 	}
@@ -206,23 +203,26 @@ func (t *TicketService) IsBlackListed(search *string) (bool, error) {
 	return false, nil
 }
 
-func (t *TicketService) VectorSearchTicketsIds(search *string) (TicketSearchTicketsIdsResults, error) {
-	if search == nil {
+func (t *TicketService) VectorSearchTicketsIds(search string) (types.TicketSearchResults, error) {
+	if search == "" {
 		return nil, errors.New("invalid search value")
 	}
 
-	hasColl, err := t.Milvus.Client.HasCollection(t.Milvus.Ctx, t.CollectionName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check if has collection")
-	}
-	if !hasColl {
-		return nil, fmt.Errorf("'%s' collection doesnt exist", t.CollectionName)
-	}
+	// hasColl, err := t.Milvus.Client.HasCollection(t.Milvus.Ctx, t.CollectionName)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to check if has collection")
+	// }
+	// if !hasColl {
+	// 	return nil, fmt.Errorf("'%s' collection doesnt exist", t.CollectionName)
+	// }
 
-	embedInput := service.Input{
-		Inputs: []string{*search},
+	
+
+	embedInput := client.GetTextEmbeddingsInput{
+		Inputs: []string{search},
 	}
-	searchEmbedding, err := service.GetTextEmbeddings(&embedInput)
+	clientEmbedding := client.NewEmbeddingClient(t.AppContext)
+	searchEmbedding, err := clientEmbedding.GetTextEmbeddings(&embedInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get search embeddings: %v", err.Error())
 	}

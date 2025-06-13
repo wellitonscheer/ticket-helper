@@ -1,4 +1,4 @@
-package milvus
+package milvus_old
 
 import (
 	"encoding/json"
