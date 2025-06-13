@@ -237,7 +237,7 @@ func (t *TicketService) VectorSearchTicketsIds(search string) (types.TicketSearc
 		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
 	}
 
-	var ticketsResult TicketSearchTicketsIdsResults
+	var ticketsResult types.TicketSearchResults
 	for _, result := range searchResults {
 		for _, field := range result.Fields {
 			var ticketIdColumn *entity.ColumnVarChar
@@ -255,7 +255,7 @@ func (t *TicketService) VectorSearchTicketsIds(search string) (types.TicketSearc
 			ticketsIds := ticketIdColumn.Data()
 
 			for i, score := range result.Scores {
-				ticketsResult = append(ticketsResult, TicketSearchTicketsIdsResult{TicketId: ticketsIds[i], Score: score})
+				ticketsResult = append(ticketsResult, types.TicketSearchResult{TicketId: ticketsIds[i], Score: score})
 			}
 		}
 	}
