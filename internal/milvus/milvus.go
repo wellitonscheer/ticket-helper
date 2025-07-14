@@ -1,4 +1,4 @@
-package db
+package milvus
 
 import (
 	"context"
@@ -11,17 +11,38 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"github.com/wellitonscheer/ticket-helper/internal/config"
 )
 
-var lock = &sync.Mutex{}
-
 type MilvusClient struct {
-	c      client.Client
-	ctx    context.Context
-	cancel context.CancelFunc
+	Client client.Client
+	Ctx    context.Context
+	Cancel context.CancelFunc
+}
+
+func NewMilvusConnection(conf *config.Config) *MilvusClient {
+	fmt.Println("Connecting to milvus now.")
+
+	milvusAddr := fmt.Sprintf("%s:%s", conf.Common.BaseUrl, conf.Milvus.MilvulPort)
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	c, err := client.NewClient(ctx, client.Config{
+		Address:        milvusAddr,
+		RetryRateLimit: &client.RetryRateLimitOption{MaxRetry: 3, MaxBackoff: time.Second * 2},
+	})
+	if err != nil {
+		cancel()
+		log.Fatal(err)
+	}
+	fmt.Println("Milvus connected.")
+
+	return &MilvusClient{c, ctx, cancel}
 }
 
 var milvusInstance *MilvusClient
+var lock = &sync.Mutex{}
 
 func getMilvusInstance() (*MilvusClient, error) {
 	if milvusInstance == nil {
@@ -70,12 +91,12 @@ func TestDb() error {
 
 	collectionName := `gosdk_basic_collection`
 
-	collExists, err := (*milvus).c.HasCollection(milvus.ctx, collectionName)
+	collExists, err := (*milvus).Client.HasCollection(milvus.Ctx, collectionName)
 	if err != nil {
 		return fmt.Errorf("failed to check collection exists: %v", err.Error())
 	}
 	if collExists {
-		err = milvus.c.DropCollection(milvus.ctx, collectionName)
+		err = milvus.Client.DropCollection(milvus.Ctx, collectionName)
 		return fmt.Errorf("failed to drop collection: %v", err.Error())
 	}
 
@@ -99,12 +120,12 @@ func TestDb() error {
 			},
 		},
 	}
-	err = milvus.c.CreateCollection(milvus.ctx, schema, entity.DefaultShardNumber)
+	err = milvus.Client.CreateCollection(milvus.Ctx, schema, entity.DefaultShardNumber)
 	if err != nil {
 		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
 
-	collections, err := milvus.c.ListCollections(milvus.ctx)
+	collections, err := milvus.Client.ListCollections(milvus.Ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list collections: %v", err.Error())
 	}
@@ -112,7 +133,7 @@ func TestDb() error {
 		log.Printf("Collection id: %d, name: %s\n", collection.ID, collection.Name)
 	}
 
-	partitions, err := milvus.c.ShowPartitions(milvus.ctx, collectionName)
+	partitions, err := milvus.Client.ShowPartitions(milvus.Ctx, collectionName)
 	if err != nil {
 		return fmt.Errorf("failed to show partitions: %v", err.Error())
 	}
@@ -121,13 +142,13 @@ func TestDb() error {
 	}
 
 	partitionName := "new_partition"
-	err = milvus.c.CreatePartition(milvus.ctx, collectionName, partitionName)
+	err = milvus.Client.CreatePartition(milvus.Ctx, collectionName, partitionName)
 	if err != nil {
 		return fmt.Errorf("failed to create partition: %v", err.Error())
 	}
 
 	log.Println("After create partition")
-	partitions, err = milvus.c.ShowPartitions(milvus.ctx, collectionName)
+	partitions, err = milvus.Client.ShowPartitions(milvus.Ctx, collectionName)
 	if err != nil {
 		return fmt.Errorf("failed to show partitions: %v", err.Error())
 	}
@@ -135,8 +156,8 @@ func TestDb() error {
 		log.Printf("partition id: %d, name: %s\n", partition.ID, partition.Name)
 	}
 
-	_ = milvus.c.DropCollection(milvus.ctx, collectionName)
-	milvus.c.Close()
+	_ = milvus.Client.DropCollection(milvus.Ctx, collectionName)
+	milvus.Client.Close()
 
 	return nil
 }

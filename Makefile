@@ -18,6 +18,10 @@ setup: ## execute everything it needs to run dev
 .PHONY: dev
 dev: ## run everything it needs to start in dev with hot reload
 	./standalone_embed.sh start
+	air
+
+## dev: ## run everything it needs to start in dev with hot reload
+	./standalone_embed.sh start
 	./embedding.sh
 	./attu.sh
 	$(LMSTUDIO_APPIMAGE) --no-sandbox &

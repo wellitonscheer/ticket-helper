@@ -4,25 +4,45 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"github.com/wellitonscheer/ticket-helper/internal/config"
+	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
+	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file:", err.Error())
-	}
-	ginPort := os.Getenv("GIN_PORT")
+	conf := config.NewConfig()
 
-	gin.SetMode(gin.DebugMode)
+	if conf.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
+	sqliteDb := sqlite.NewSqliteConnection()
+	defer sqliteDb.Close()
+
+	milvus := milvus.NewMilvusConnection(&conf)
+	defer milvus.Client.Close()
+	defer milvus.Cancel()
+
+	appContext := context.AppContext{
+		Config: &conf,
+		Sqlite: sqliteDb,
+		Milvus: milvus,
+	}
+
+	sqliteMigrations := sqlite.NewSqliteMigrations(appContext)
+	sqliteMigrations.RunMigrations()
+
 	r := gin.Default()
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -35,14 +55,12 @@ func main() {
 	r.LoadHTMLGlob("web/templates/*.html")
 	r.Static("/web/static", "./web/static")
 
+	loginHandlers := handlers.NewLoginHandlers(appContext)
 	login := r.Group("/login")
 	{
-		loginHandlers := handlers.NewLoginHandlers()
-
 		login.GET("/", loginHandlers.LoginPage)
-		login.GET("/insert-authorized-emails", loginHandlers.InsertAuthorizedEmails)
 		login.POST("/send-verification", loginHandlers.SendEmailVefificationCode)
-		login.POST("/validate-verification", loginHandlers.ValidateVefificationCode)
+		login.POST("/validate-verification", loginHandlers.LoginWithCode)
 	}
 
 	learn := r.Group("/learn")
@@ -56,13 +74,11 @@ func main() {
 	}
 
 	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
+		c.String(http.StatusOK, "pong")
 	})
 
 	auth := r.Group("/")
-	auth.Use(middleware.AuthMiddleware())
+	auth.Use(middleware.AuthMiddleware(appContext))
 	{
 		auth.GET("/", handlers.Index)
 		auth.GET("/user/:name", handlers.UserNew)
@@ -71,10 +87,10 @@ func main() {
 		auth.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
 		auth.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 
-		auth.GET("/kill", func(c *gin.Context) {
-			log.Fatal()
+		auth.GET("/kys", func(c *gin.Context) {
+			log.Fatal("Good bye ;-;")
 		})
 	}
 
-	r.Run(fmt.Sprintf(":%s", ginPort))
+	r.Run(fmt.Sprintf(":%s", conf.Common.GinPort))
 }

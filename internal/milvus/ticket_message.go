@@ -1,4 +1,4 @@
-package db
+package milvus
 
 import (
 	"encoding/json"
@@ -38,7 +38,7 @@ func NewTicketMessage() (*TicketMessage, error) {
 }
 
 func (tm *TicketMessage) InsertAllTickets() error {
-	collExists, err := tm.Milvus.c.HasCollection(tm.Milvus.ctx, tm.CollectionName)
+	collExists, err := tm.Milvus.Client.HasCollection(tm.Milvus.Ctx, tm.CollectionName)
 	if err != nil {
 		return fmt.Errorf("failed to check if collection exists: %v", err.Error())
 	}
@@ -118,7 +118,7 @@ func (tm *TicketMessage) InsertAllTickets() error {
 		ticketMsgContentColumn := entity.NewColumnVarChar("ticketMessageContent", ticketMsgContentBatch)
 		ticketMsgContentVecColumn := entity.NewColumnFloatVector("ticketMessageContentVector", 1024, ticketMsgContentVecBatch)
 
-		_, err = tm.Milvus.c.Insert(tm.Milvus.ctx, tm.CollectionName, "", ticketIdColumn, ticketMsgTypeColumn, ticketMsgPosterColumn, ticketMsgContentColumn, ticketMsgContentVecColumn)
+		_, err = tm.Milvus.Client.Insert(tm.Milvus.Ctx, tm.CollectionName, "", ticketIdColumn, ticketMsgTypeColumn, ticketMsgPosterColumn, ticketMsgContentColumn, ticketMsgContentVecColumn)
 		if err != nil {
 			return fmt.Errorf("failed to insert tickets: %v", err.Error())
 		}
@@ -126,12 +126,12 @@ func (tm *TicketMessage) InsertAllTickets() error {
 
 	fmt.Println("DONE inserting...")
 
-	err = tm.Milvus.c.Flush(tm.Milvus.ctx, tm.CollectionName, false)
+	err = tm.Milvus.Client.Flush(tm.Milvus.Ctx, tm.CollectionName, false)
 	if err != nil {
 		return fmt.Errorf("failed to flush collection: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.LoadCollection(tm.Milvus.ctx, tm.CollectionName, false)
+	err = tm.Milvus.Client.LoadCollection(tm.Milvus.Ctx, tm.CollectionName, false)
 	if err != nil {
 		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}
@@ -144,7 +144,7 @@ func (tm *TicketMessage) VectorSearch(search *string) (TicketSearchTicketsIdsRes
 		return nil, errors.New("invalid search value")
 	}
 
-	hasColl, err := tm.Milvus.c.HasCollection(tm.Milvus.ctx, tm.CollectionName)
+	hasColl, err := tm.Milvus.Client.HasCollection(tm.Milvus.Ctx, tm.CollectionName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if has collection")
 	}
@@ -165,7 +165,7 @@ func (tm *TicketMessage) VectorSearch(search *string) (TicketSearchTicketsIdsRes
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new index flat search param: %v", err.Error())
 	}
-	searchResults, err := tm.Milvus.c.Search(tm.Milvus.ctx, tm.CollectionName, nil, "", []string{"ticketId"}, []entity.Vector{vector}, "ticketMessageContentVector", entity.COSINE, 20, sp)
+	searchResults, err := tm.Milvus.Client.Search(tm.Milvus.Ctx, tm.CollectionName, nil, "", []string{"ticketId"}, []entity.Vector{vector}, "ticketMessageContentVector", entity.COSINE, 20, sp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search ticket: %v", err.Error())
 	}
@@ -256,7 +256,7 @@ func (tm *TicketMessage) CreateCollection() error {
 		},
 	}
 
-	err := tm.Milvus.c.CreateCollection(tm.Milvus.ctx, &schema, 1)
+	err := tm.Milvus.Client.CreateCollection(tm.Milvus.Ctx, &schema, 1)
 	if err != nil {
 		return fmt.Errorf("failed to create collection: %v", err.Error())
 	}
@@ -266,12 +266,12 @@ func (tm *TicketMessage) CreateCollection() error {
 		return fmt.Errorf("fail to create ivf flat index: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.CreateIndex(tm.Milvus.ctx, tm.CollectionName, "ticketMessageContentVector", idx, false)
+	err = tm.Milvus.Client.CreateIndex(tm.Milvus.Ctx, tm.CollectionName, "ticketMessageContentVector", idx, false)
 	if err != nil {
 		return fmt.Errorf("fail to create index: %v", err.Error())
 	}
 
-	err = tm.Milvus.c.LoadCollection(tm.Milvus.ctx, tm.CollectionName, false)
+	err = tm.Milvus.Client.LoadCollection(tm.Milvus.Ctx, tm.CollectionName, false)
 	if err != nil {
 		return fmt.Errorf("failed to load collection: %v", err.Error())
 	}
