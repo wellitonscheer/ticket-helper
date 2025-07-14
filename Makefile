@@ -13,11 +13,12 @@ help: ## display this help message
 .PHONY: setup
 setup: ## execute everything it needs to run dev
 	go install github.com/air-verse/air@latest
-	chmod +x standalone_embed.sh embedding.sh attu.sh
+	chmod +x standalone_embed.sh embedding.sh attu.sh pgvector.sh
 
 .PHONY: dev
 dev: ## run everything it needs to start in dev with hot reload
 	./standalone_embed.sh start
+	./pgvector.sh
 	air
 
 ## dev: ## run everything it needs to start in dev with hot reload
