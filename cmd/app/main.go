@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wellitonscheer/ticket-helper/internal/config"
 	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec"
 	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
 	"github.com/wellitonscheer/ticket-helper/internal/milvus"
@@ -32,10 +33,14 @@ func main() {
 	defer milvus.Client.Close()
 	defer milvus.Cancel()
 
+	pgVec := pgvec.NewPGVectorConnection(&conf.PGVector)
+	defer pgVec.Close()
+
 	appContext := context.AppContext{
 		Config: &conf,
 		Sqlite: sqliteDb,
 		Milvus: milvus,
+		PGVec:  pgVec,
 	}
 
 	sqliteMigrations := sqlite.NewSqliteMigrations(appContext)
