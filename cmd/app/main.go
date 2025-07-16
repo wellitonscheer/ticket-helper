@@ -46,6 +46,8 @@ func main() {
 	sqliteMigrations := sqlite.NewSqliteMigrations(appContext)
 	sqliteMigrations.RunMigrations()
 
+	pgvec.InitiatePGVec(&appContext)
+
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -59,6 +61,7 @@ func main() {
 
 	r.LoadHTMLGlob("web/templates/*.html")
 	r.Static("/web/static", "./web/static")
+	r.StaticFile("/robots.txt", "./robots.txt")
 
 	loginHandlers := handlers.NewLoginHandlers(appContext)
 	login := r.Group("/login")

@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS verification_code (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    code INTEGER NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS session (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    token TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS authorized_emails (
+    id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL
+);
