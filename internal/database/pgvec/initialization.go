@@ -8,14 +8,33 @@ import (
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 )
 
+const migrationFolder string = "./internal/database/pgvec/migrations"
+
 func InitiatePGVec(ctx *appContext.AppContext) {
-	fileMigration, err := os.ReadFile("./internal/database/pgvec/migrations/1_create_tables.sql")
+	fmt.Println("\nInitiating PGVector migrations...\n")
+
+	migrations, err := os.ReadDir(migrationFolder)
 	if err != nil {
-		fmt.Printf("error to read migration file: %v\n", err)
+		fmt.Printf("error to read migration folder (entries read=%d)\n", len(migrations))
+		panic(err)
 	}
 
-	_, err = ctx.PGVec.Exec(context.Background(), string(fileMigration))
-	if err != nil {
-		fmt.Printf("error to execute migration: %v\n", err)
+	for i, entry := range migrations {
+		fmt.Printf("\nfile number=%d file name = %s \n", i, entry.Name())
+		fileMigration, err := os.ReadFile(fmt.Sprintf("%s/%s", migrationFolder, entry.Name()))
+		if err != nil {
+			fmt.Println("error to read migration file")
+			panic(err)
+		}
+
+		fmt.Printf("\nexecuting migration: \n\n %s \n", string(fileMigration))
+
+		_, err = ctx.PGVec.Exec(context.Background(), string(fileMigration))
+		if err != nil {
+			fmt.Println("error to execute migration")
+			panic(err)
+		}
 	}
+
+	fmt.Println("\nPGVector migrations applied\n")
 }
