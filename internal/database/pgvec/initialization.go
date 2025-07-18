@@ -10,7 +10,7 @@ import (
 
 const migrationFolder string = "./internal/database/pgvec/migrations"
 
-func InitiatePGVec(ctx *appContext.AppContext) {
+func InitiatePGVec(appCtx appContext.AppContext) {
 	fmt.Println("\nInitiating PGVector migrations...\n")
 
 	migrations, err := os.ReadDir(migrationFolder)
@@ -21,6 +21,7 @@ func InitiatePGVec(ctx *appContext.AppContext) {
 
 	for i, entry := range migrations {
 		fmt.Printf("\nfile number=%d file name = %s \n", i, entry.Name())
+
 		fileMigration, err := os.ReadFile(fmt.Sprintf("%s/%s", migrationFolder, entry.Name()))
 		if err != nil {
 			fmt.Println("error to read migration file")
@@ -29,7 +30,7 @@ func InitiatePGVec(ctx *appContext.AppContext) {
 
 		fmt.Printf("\nexecuting migration: \n\n %s \n", string(fileMigration))
 
-		_, err = ctx.PGVec.Exec(context.Background(), string(fileMigration))
+		_, err = appCtx.PGVec.Exec(context.Background(), string(fileMigration))
 		if err != nil {
 			fmt.Println("error to execute migration")
 			panic(err)

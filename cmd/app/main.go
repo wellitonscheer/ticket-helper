@@ -33,7 +33,7 @@ func main() {
 	defer milvus.Client.Close()
 	defer milvus.Cancel()
 
-	pgVec := pgvec.NewPGVectorConnection(&conf.PGVector)
+	pgVec := pgvec.NewPGVectorConnection(conf.PGVector)
 	defer pgVec.Close()
 
 	appContext := context.AppContext{
@@ -46,7 +46,7 @@ func main() {
 	sqliteMigrations := sqlite.NewSqliteMigrations(appContext)
 	sqliteMigrations.RunMigrations()
 
-	pgvec.InitiatePGVec(&appContext)
+	pgvec.InitiatePGVec(appContext)
 
 	r := gin.Default()
 
