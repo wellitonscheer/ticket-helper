@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pgvector/pgvector-go"
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecervi"
@@ -67,13 +68,24 @@ func InsertTickets(appCtx appContext.AppContext) {
 	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
 
 	for _, entry := range ticketEntries.Data {
+		storedTicket, err := ticketServi.GetByTicketId(entry.TicketId)
+		if err != nil {
+			fmt.Printf("failed to get ticket by id (ticketId=%d)", entry.TicketId)
+			panic(err)
+		}
+
+		if !storedTicket.IsEmpty() {
+			// already in database
+			continue
+		}
+
 		embedInputs := types.Inputs{
 			Inputs: []string{entry.Body},
 		}
 
 		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
 		if err != nil {
-			fmt.Printf("failed to get entry body embeddings (entry=%+v)\n", embedInputs)
+			fmt.Printf("failed to get entry body embeddings (embedInputs=%+v)\n", embedInputs)
 			panic(err)
 		}
 
@@ -83,13 +95,13 @@ func InsertTickets(appCtx appContext.AppContext) {
 		}
 
 		ticket := pgvecodel.Ticket{
-			Type:       entry.Type,
-			TicketId:   entry.TicketId,
-			Subject:    entry.Subject,
-			Ordem:      entry.Ordem,
-			Poster:     entry.Poster,
-			Body:       entry.Body,
-			Embeddings: (*embeddings)[0],
+			Type:      entry.Type,
+			TicketId:  entry.TicketId,
+			Subject:   entry.Subject,
+			Ordem:     entry.Ordem,
+			Poster:    entry.Poster,
+			Body:      entry.Body,
+			Embedding: pgvector.NewVector((*embeddings)[0]),
 		}
 
 		err = ticketServi.Create(ticket)
