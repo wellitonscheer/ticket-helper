@@ -2,13 +2,19 @@ package pgvec
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
-const migrationFolder string = "./internal/database/pgvec/migrations"
+const (
+	migrationFolder string = "./internal/database/pgvec/migrations"
+	expTicketsPath  string = "./data_source/tickets.example.json"
+)
 
 func InitiatePGVec(appCtx appContext.AppContext) {
 	fmt.Println("\nInitiating PGVector migrations...\n")
@@ -38,4 +44,35 @@ func InitiatePGVec(appCtx appContext.AppContext) {
 	}
 
 	fmt.Println("\nPGVector migrations applied\n")
+
+	InsertTickets(appCtx)
+}
+
+func InsertTickets(appCtx appContext.AppContext) {
+	tickets, err := os.ReadFile(expTicketsPath)
+	if err != nil {
+		fmt.Printf("error to read exported tickets file (path=%s)\n", expTicketsPath)
+		panic(err)
+	}
+
+	var ticketEntries types.ExportedTickets
+	err = json.Unmarshal(tickets, &ticketEntries)
+	if err != nil {
+		fmt.Printf("error to unmarshal exported tickets\n")
+		panic(err)
+	}
+
+	for _, entry := range ticketEntries.Data {
+		embedInputs := types.Inputs{
+			Inputs: []string{entry.Body},
+		}
+
+		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
+		if err != nil {
+			fmt.Printf("failed to get entry body embeddings\n")
+			panic(err)
+		}
+
+		fmt.Printf("embdding: \n\n %+v \n\n", embeddings)
+	}
 }
