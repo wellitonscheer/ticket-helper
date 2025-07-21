@@ -8,12 +8,14 @@ import (
 
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecervi"
+	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
 const (
 	migrationFolder string = "./internal/database/pgvec/migrations"
-	expTicketsPath  string = "./data_source/tickets.example.json"
+	expTicketsPath  string = "./data_source/tickets.json"
 )
 
 func InitiatePGVec(appCtx appContext.AppContext) {
@@ -62,6 +64,8 @@ func InsertTickets(appCtx appContext.AppContext) {
 		panic(err)
 	}
 
+	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
+
 	for _, entry := range ticketEntries.Data {
 		embedInputs := types.Inputs{
 			Inputs: []string{entry.Body},
@@ -69,10 +73,29 @@ func InsertTickets(appCtx appContext.AppContext) {
 
 		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
 		if err != nil {
-			fmt.Printf("failed to get entry body embeddings\n")
+			fmt.Printf("failed to get entry body embeddings (entry=%+v)\n", embedInputs)
 			panic(err)
 		}
 
-		fmt.Printf("embdding: \n\n %+v \n\n", embeddings)
+		if len(*embeddings) == 0 {
+			fmt.Printf("embedding has returned no value (embeddings=\n%+v\n)\n", embeddings)
+			panic("")
+		}
+
+		ticket := pgvecodel.Ticket{
+			Type:       entry.Type,
+			TicketId:   entry.TicketId,
+			Subject:    entry.Subject,
+			Ordem:      entry.Ordem,
+			Poster:     entry.Poster,
+			Body:       entry.Body,
+			Embeddings: (*embeddings)[0],
+		}
+
+		err = ticketServi.Create(ticket)
+		if err != nil {
+			fmt.Printf("failed to create new ticket\n")
+			panic(err)
+		}
 	}
 }
