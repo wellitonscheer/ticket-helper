@@ -68,9 +68,9 @@ func InsertTickets(appCtx appContext.AppContext) {
 	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
 
 	for _, entry := range ticketEntries.Data {
-		storedTicket, err := ticketServi.GetByTicketId(entry.TicketId)
+		storedTicket, err := ticketServi.GetUniqueByTicketIdAndOrdem(entry.TicketId, entry.Ordem)
 		if err != nil {
-			fmt.Printf("failed to get ticket by id (ticketId=%d)", entry.TicketId)
+			fmt.Printf("failed to get ticket entry by id and ordem (ticketId=%d, ordem=%d)", entry.TicketId, entry.Ordem)
 			panic(err)
 		}
 
@@ -94,7 +94,7 @@ func InsertTickets(appCtx appContext.AppContext) {
 			panic("")
 		}
 
-		ticket := pgvecodel.Ticket{
+		ticket := pgvecodel.TicketEntry{
 			Type:      entry.Type,
 			TicketId:  entry.TicketId,
 			Subject:   entry.Subject,
