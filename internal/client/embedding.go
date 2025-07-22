@@ -12,6 +12,18 @@ import (
 )
 
 func GetTextEmbeddings(appCtx appContext.AppContext, inputs *types.Inputs) (*types.Embeddings, error) {
+	var embeddings types.Embeddings
+
+	if len(inputs.Inputs) == 0 {
+		return &embeddings, fmt.Errorf("client embeddings inputs cannot be empty (inputs=%+v)", inputs)
+	}
+
+	for _, input := range inputs.Inputs {
+		if input == "" {
+			return &embeddings, fmt.Errorf("client embeddings inputs cannot have empty strings (inputs=%+v)", inputs)
+		}
+	}
+
 	inputsBytes, err := json.Marshal(inputs)
 	if err != nil {
 		return nil, fmt.Errorf("error to marchal inputs: %v", err)
@@ -30,10 +42,9 @@ func GetTextEmbeddings(appCtx appContext.AppContext, inputs *types.Inputs) (*typ
 		return nil, fmt.Errorf("failed to read embedding response body: %v", err)
 	}
 
-	var embeddings types.Embeddings
 	err = json.Unmarshal(body, &embeddings)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal embeddings body: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal embeddings body (string(body)=%v): %v", string(body), err)
 	}
 
 	return &embeddings, nil

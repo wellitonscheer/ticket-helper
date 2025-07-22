@@ -6,8 +6,15 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pgvector/pgvector-go"
+	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
+	"github.com/wellitonscheer/ticket-helper/internal/types"
+)
+
+const (
+	limitSimilaritySearch int = 10
 )
 
 type TicketEntriesService struct {
@@ -40,27 +47,56 @@ func (tik TicketEntriesService) Create(ticket pgvecodel.TicketEntry) error {
 }
 
 func (tik TicketEntriesService) GetByTicketId(ticketId int) ([]pgvecodel.TicketEntry, error) {
-	var ticket []pgvecodel.TicketEntry
+	var entries []pgvecodel.TicketEntry
 
-	err := pgxscan.Select(context.Background(), tik.Conn, &ticket, "SELECT * FROM ticket_entries WHERE ticket_id = $1", ticketId)
+	err := pgxscan.Select(context.Background(), tik.Conn, &entries, "SELECT * FROM ticket_entries WHERE ticket_id = $1", ticketId)
 	if err != nil {
-		return ticket, fmt.Errorf("failed to get ticket entries by id (ticketId=%d): %v", ticketId, err)
+		return entries, fmt.Errorf("failed to get ticket entries by id (ticketId=%d): %v", ticketId, err)
 	}
 
-	return ticket, nil
+	return entries, nil
 }
 
 func (tik TicketEntriesService) GetUniqueByTicketIdAndOrdem(ticketId int, ordem int) (pgvecodel.TicketEntry, error) {
-	var ticket []pgvecodel.TicketEntry
+	var entries []pgvecodel.TicketEntry
 
-	err := pgxscan.Select(context.Background(), tik.Conn, &ticket, "SELECT * FROM ticket_entries WHERE ticket_id = $1 AND ordem = $2", ticketId, ordem)
+	err := pgxscan.Select(context.Background(), tik.Conn, &entries, "SELECT * FROM ticket_entries WHERE ticket_id = $1 AND ordem = $2", ticketId, ordem)
 	if err != nil {
 		return pgvecodel.TicketEntry{}, fmt.Errorf("failed to get unique ticket entry by id and ordem (ticketId=%d): %v", ticketId, err)
 	}
 
-	if len(ticket) == 0 {
+	if len(entries) == 0 {
 		return pgvecodel.TicketEntry{}, nil
 	}
 
-	return ticket[0], nil
+	return entries[0], nil
+}
+
+func (tik TicketEntriesService) SearchSimilarByEmbed(embed []float32) ([]pgvecodel.TicketEntry, error) {
+	var entries []pgvecodel.TicketEntry
+
+	err := pgxscan.Select(context.Background(), tik.Conn, &entries, "SELECT * FROM ticket_entries ORDER BY embedding <=> $1 LIMIT $2", pgvector.NewVector(embed), limitSimilaritySearch)
+	if err != nil {
+		return entries, fmt.Errorf("failed ticket entries by embed (embed=%v): %v", embed, err)
+	}
+
+	return entries, nil
+}
+
+func (tik TicketEntriesService) SearchSimilarByText(text string) ([]pgvecodel.TicketEntry, error) {
+	embedInputs := types.Inputs{
+		Inputs: []string{text},
+	}
+	embeddings, err := client.GetTextEmbeddings(tik.AppCtx, &embedInputs)
+	if err != nil {
+		return []pgvecodel.TicketEntry{}, fmt.Errorf("failed to get text embeddings for the similarity search (text=%s): %v", text, err)
+	}
+
+	firstEmbedding := (*embeddings)[0]
+
+	if len(firstEmbedding) == 0 {
+		return []pgvecodel.TicketEntry{}, fmt.Errorf("getTextEmbeddings returned no embedding (embeddings=%+v)", embeddings)
+	}
+
+	return tik.SearchSimilarByEmbed(firstEmbedding)
 }
