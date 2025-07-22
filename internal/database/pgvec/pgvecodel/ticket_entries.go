@@ -14,5 +14,6 @@ type TicketEntry struct {
 }
 
 func (t *TicketEntry) IsEmpty() bool {
+	// id is autoincrement and begins in 1, will never be 0
 	return t.Id == 0
 }

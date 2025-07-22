@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/pgvector/pgvector-go"
 	"github.com/wellitonscheer/ticket-helper/internal/client"
@@ -17,6 +18,7 @@ import (
 const (
 	migrationFolder string = "./internal/database/pgvec/migrations"
 	expTicketsPath  string = "./data_source/tickets.json"
+	logFilePath     string = "./internal/database/pgvec/logs.txt"
 )
 
 func InitiatePGVec(appCtx appContext.AppContext) {
@@ -65,13 +67,16 @@ func InsertTickets(appCtx appContext.AppContext) {
 		panic(err)
 	}
 
+	logFile := OpenLogFile(logFilePath)
+	defer logFile.Close()
+
 	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
 
 	for _, entry := range ticketEntries.Data {
 		storedTicket, err := ticketServi.GetUniqueByTicketIdAndOrdem(entry.TicketId, entry.Ordem)
 		if err != nil {
-			fmt.Printf("failed to get ticket entry by id and ordem (ticketId=%d, ordem=%d)", entry.TicketId, entry.Ordem)
-			panic(err)
+			Log(logFile, fmt.Sprintf("ERROR: failed to get ticket entry by id and ordem (ticketId=%d, ordem=%d): %v", entry.TicketId, entry.Ordem, err))
+			continue
 		}
 
 		if !storedTicket.IsEmpty() {
@@ -85,13 +90,13 @@ func InsertTickets(appCtx appContext.AppContext) {
 
 		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
 		if err != nil {
-			fmt.Printf("failed to get entry body embeddings (embedInputs=%+v)\n", embedInputs)
-			panic(err)
+			Log(logFile, fmt.Sprintf("ERROR: failed to get entry body embeddings (embedInputs=%+v): %v", embedInputs, err))
+			continue
 		}
 
 		if len(*embeddings) == 0 {
-			fmt.Printf("embedding has returned no value (embeddings=\n%+v\n)\n", embeddings)
-			panic("")
+			Log(logFile, fmt.Sprintf("ERROR: embedding has returned no value (embeddings=%+v, embedInputs=%+v)", embeddings, embedInputs))
+			continue
 		}
 
 		ticket := pgvecodel.TicketEntry{
@@ -106,8 +111,27 @@ func InsertTickets(appCtx appContext.AppContext) {
 
 		err = ticketServi.Create(ticket)
 		if err != nil {
-			fmt.Printf("failed to create new ticket\n")
-			panic(err)
+			Log(logFile, fmt.Sprintf("ERROR: failed to create new ticket (ticket=%+v): %v", ticket, err))
+			continue
 		}
+	}
+}
+
+func OpenLogFile(path string) *os.File {
+	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("failed to open log file (path=%s)", path)
+		panic(err)
+	}
+
+	return logFile
+}
+
+func Log(file *os.File, log string) {
+	info := fmt.Sprintf("%v: %s\n", time.Now(), log)
+
+	_, err := file.WriteString(info)
+	if err != nil {
+		fmt.Printf("error to write into log file (info=%s): %v", info, err)
 	}
 }
