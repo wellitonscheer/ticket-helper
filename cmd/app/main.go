@@ -84,7 +84,6 @@ func main() {
 	{
 		auth.GET("/", handlers.Index)
 		auth.GET("/user/:name", handlers.UserNew)
-		auth.GET("/tickets", handlers.TicketInsertAll)
 		auth.POST("/tickets/search", handlers.TicketVectorSearch)
 
 		auth.GET("/kys", func(c *gin.Context) {

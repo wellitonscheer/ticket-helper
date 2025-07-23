@@ -12,10 +12,6 @@ const (
 	suggestReply        = "reply"
 )
 
-func TicketInsertAll(c *gin.Context) {
-	c.Status(http.StatusOK)
-}
-
 func TicketVectorSearch(c *gin.Context) {
 	searchInput := c.PostForm("search-input")
 	searchType := c.PostForm("search-type")
