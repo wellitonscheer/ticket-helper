@@ -13,7 +13,6 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec"
 	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
-	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
 )
 
@@ -29,17 +28,12 @@ func main() {
 	sqliteDb := sqlite.NewSqliteConnection()
 	defer sqliteDb.Close()
 
-	milvus := milvus.NewMilvusConnection(&conf)
-	defer milvus.Client.Close()
-	defer milvus.Cancel()
-
 	pgVec := pgvec.NewPGVectorConnection(conf.PGVector)
 	defer pgVec.Close()
 
 	appContext := context.AppContext{
 		Config: &conf,
 		Sqlite: sqliteDb,
-		Milvus: milvus,
 		PGVec:  pgVec,
 	}
 
@@ -92,8 +86,6 @@ func main() {
 		auth.GET("/user/:name", handlers.UserNew)
 		auth.GET("/tickets", handlers.TicketInsertAll)
 		auth.POST("/tickets/search", handlers.TicketVectorSearch)
-		auth.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
-		auth.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 
 		auth.GET("/kys", func(c *gin.Context) {
 			log.Fatal("Good bye ;-;")

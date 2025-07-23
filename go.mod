@@ -8,7 +8,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.24
-	github.com/milvus-io/milvus-sdk-go/v2 v2.4.2
 	gopkg.in/mail.v2 v2.3.1
 )
 

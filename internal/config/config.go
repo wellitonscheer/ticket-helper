@@ -34,12 +34,6 @@ type EmbedConfig struct {
 	ContainerName string
 }
 
-type MilvusConfig struct {
-	MilvulPort        string
-	AttuPort          string
-	AttuContainerName string
-}
-
 type CommonConfig struct {
 	MyIp                 string
 	BaseUrl              string
@@ -58,7 +52,6 @@ type PGVectorConfig struct {
 
 type Config struct {
 	Common   CommonConfig
-	Milvus   MilvusConfig
 	Embed    EmbedConfig
 	Email    EmailConfig
 	Data     DataConfig
@@ -73,7 +66,6 @@ func NewConfig() Config {
 
 	return Config{
 		Common:   ReadCommonConfig(),
-		Milvus:   ReadMilvusConfig(),
 		Embed:    ReadEmbedConfig(),
 		Email:    ReadEmailConfig(),
 		Data:     ReadDataConfig(),
@@ -113,14 +105,6 @@ func ReadCommonConfig() CommonConfig {
 		GinPort:              os.Getenv("GIN_PORT"),
 		LoginCodeLifetimeSec: verificCodeLifetimeSec,
 		SessionLifetimeSec:   sessionLifetimeSec,
-	}
-}
-
-func ReadMilvusConfig() MilvusConfig {
-	return MilvusConfig{
-		MilvulPort:        os.Getenv("MILVUS_PORT"),
-		AttuPort:          os.Getenv("ATTU_PORT"),
-		AttuContainerName: os.Getenv("ATTU_CONTAINER_NAME"),
 	}
 }
 
