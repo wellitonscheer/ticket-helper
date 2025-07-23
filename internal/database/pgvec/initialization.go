@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/pgvector/pgvector-go"
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
@@ -70,9 +71,16 @@ func InsertTickets(appCtx appContext.AppContext) {
 	logFile := OpenLogFile(logFilePath)
 	defer logFile.Close()
 
+	strip := bluemonday.StrictPolicy()
+
 	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
 
 	for _, entry := range ticketEntries.Data {
+		if entry.Body == "" {
+			Log(logFile, fmt.Sprintf("INFO: empty entry body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
+			continue
+		}
+
 		storedTicket, err := ticketServi.GetUniqueByTicketIdAndOrdem(entry.TicketId, entry.Ordem)
 		if err != nil {
 			Log(logFile, fmt.Sprintf("ERROR: failed to get ticket entry by id and ordem (ticketId=%d, ordem=%d): %v", entry.TicketId, entry.Ordem, err))
@@ -81,11 +89,18 @@ func InsertTickets(appCtx appContext.AppContext) {
 
 		if !storedTicket.IsEmpty() {
 			// already in database
+			Log(logFile, fmt.Sprintf("INFO: ticket already in database (storedEntryId=%d, storedTicketID=%d, storedTicketOrdem=%d)", storedTicket.Id, storedTicket.TicketId, storedTicket.Ordem))
+			continue
+		}
+
+		stripedBody := strip.Sanitize(entry.Body)
+		if stripedBody == "" {
+			Log(logFile, fmt.Sprintf("ERROR: failed to strip body (ticketId=%d, ordem=%d, body=%s)", entry.TicketId, entry.Ordem, entry.Body))
 			continue
 		}
 
 		embedInputs := types.Inputs{
-			Inputs: []string{entry.Body},
+			Inputs: []string{stripedBody},
 		}
 
 		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
@@ -105,7 +120,7 @@ func InsertTickets(appCtx appContext.AppContext) {
 			Subject:   entry.Subject,
 			Ordem:     entry.Ordem,
 			Poster:    entry.Poster,
-			Body:      entry.Body,
+			Body:      stripedBody,
 			Embedding: pgvector.NewVector((*embeddings)[0]),
 		}
 
@@ -114,6 +129,8 @@ func InsertTickets(appCtx appContext.AppContext) {
 			Log(logFile, fmt.Sprintf("ERROR: failed to create new ticket (ticket=%+v): %v", ticket, err))
 			continue
 		}
+
+		Log(logFile, fmt.Sprintf("INFO: ticket inserted (ticketId=%d, ticketOrdem=%d)", ticket.TicketId, ticket.Ordem))
 	}
 }
 
@@ -130,7 +147,7 @@ func OpenLogFile(path string) *os.File {
 func Log(file *os.File, log string) {
 	info := fmt.Sprintf("%v: %s\n", time.Now(), log)
 
-	_, err := file.WriteString(info)
+	_, err := file.Write([]byte(info))
 	if err != nil {
 		fmt.Printf("error to write into log file (info=%s): %v", info, err)
 	}
