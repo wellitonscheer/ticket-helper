@@ -34,12 +34,6 @@ type EmbedConfig struct {
 	ContainerName string
 }
 
-type MilvusConfig struct {
-	MilvulPort        string
-	AttuPort          string
-	AttuContainerName string
-}
-
 type CommonConfig struct {
 	MyIp                 string
 	BaseUrl              string
@@ -49,12 +43,19 @@ type CommonConfig struct {
 	SessionLifetimeSec   time.Duration // in seconds
 }
 
+type PGVectorConfig struct {
+	PostgresUser     string
+	PostgresDB       string
+	PostgresPassword string
+	PostgresPort     string
+}
+
 type Config struct {
-	Common CommonConfig
-	Milvus MilvusConfig
-	Embed  EmbedConfig
-	Email  EmailConfig
-	Data   DataConfig
+	Common   CommonConfig
+	Embed    EmbedConfig
+	Email    EmailConfig
+	Data     DataConfig
+	PGVector PGVectorConfig
 }
 
 func NewConfig() Config {
@@ -64,11 +65,11 @@ func NewConfig() Config {
 	}
 
 	return Config{
-		Common: ReadCommonConfig(),
-		Milvus: ReadMilvusConfig(),
-		Embed:  ReadEmbedConfig(),
-		Email:  ReadEmailConfig(),
-		Data:   ReadDataConfig(),
+		Common:   ReadCommonConfig(),
+		Embed:    ReadEmbedConfig(),
+		Email:    ReadEmailConfig(),
+		Data:     ReadDataConfig(),
+		PGVector: ReadPGVectorConfig(),
 	}
 }
 
@@ -104,14 +105,6 @@ func ReadCommonConfig() CommonConfig {
 		GinPort:              os.Getenv("GIN_PORT"),
 		LoginCodeLifetimeSec: verificCodeLifetimeSec,
 		SessionLifetimeSec:   sessionLifetimeSec,
-	}
-}
-
-func ReadMilvusConfig() MilvusConfig {
-	return MilvusConfig{
-		MilvulPort:        os.Getenv("MILVUS_PORT"),
-		AttuPort:          os.Getenv("ATTU_PORT"),
-		AttuContainerName: os.Getenv("ATTU_CONTAINER_NAME"),
 	}
 }
 
@@ -153,6 +146,15 @@ func ReadDataConfig() DataConfig {
 
 	return DataConfig{
 		AuthEmailsPath: authEmailsPath,
+	}
+}
+
+func ReadPGVectorConfig() PGVectorConfig {
+	return PGVectorConfig{
+		PostgresUser:     os.Getenv("POSTGRES_USER"),
+		PostgresDB:       os.Getenv("POSTGRES_DB"),
+		PostgresPassword: os.Getenv("POSTGRES_PASSWORD"),
+		PostgresPort:     os.Getenv("POSTGRES_PORT"),
 	}
 }
 

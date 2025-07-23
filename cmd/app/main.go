@@ -10,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wellitonscheer/ticket-helper/internal/config"
 	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec"
 	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
-	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/routes/middleware"
 )
 
@@ -28,18 +28,19 @@ func main() {
 	sqliteDb := sqlite.NewSqliteConnection()
 	defer sqliteDb.Close()
 
-	milvus := milvus.NewMilvusConnection(&conf)
-	defer milvus.Client.Close()
-	defer milvus.Cancel()
+	pgVec := pgvec.NewPGVectorConnection(conf.PGVector)
+	defer pgVec.Close()
 
 	appContext := context.AppContext{
 		Config: &conf,
 		Sqlite: sqliteDb,
-		Milvus: milvus,
+		PGVec:  pgVec,
 	}
 
 	sqliteMigrations := sqlite.NewSqliteMigrations(appContext)
 	sqliteMigrations.RunMigrations()
+
+	pgvec.InitiatePGVec(appContext)
 
 	r := gin.Default()
 
@@ -54,6 +55,7 @@ func main() {
 
 	r.LoadHTMLGlob("web/templates/*.html")
 	r.Static("/web/static", "./web/static")
+	r.StaticFile("/robots.txt", "./robots.txt")
 
 	loginHandlers := handlers.NewLoginHandlers(appContext)
 	login := r.Group("/login")
@@ -84,8 +86,6 @@ func main() {
 		auth.GET("/user/:name", handlers.UserNew)
 		auth.GET("/tickets", handlers.TicketInsertAll)
 		auth.POST("/tickets/search", handlers.TicketVectorSearch)
-		auth.GET("/tickets/messages/insert-all", handlers.TicketMessagesInsertAll)
-		auth.GET("/black-tickets/insert-all", handlers.BlackTicketInsertAll)
 
 		auth.GET("/kys", func(c *gin.Context) {
 			log.Fatal("Good bye ;-;")

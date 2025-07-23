@@ -12,7 +12,10 @@ if [ -z "$EMBED_PORT" ]; then
   exit 1
 fi
 
-model=intfloat/multilingual-e5-large-instruct
+#image=ghcr.io/huggingface/text-embeddings-inference:1.5
+image=ghcr.io/huggingface/text-embeddings-inference:cpu-ipex-latest
+#model=intfloat/multilingual-e5-large-instruct
+model=Qwen/Qwen3-Embedding-0.6B
 volume=$PWD/volumes
 
 res=$(docker ps | grep $EMBED_CONTAINER_NAME | grep healthy | wc -l)
@@ -29,7 +32,8 @@ if docker ps -a | grep -q $EMBED_CONTAINER_NAME; then
 fi
 
 echo "Starting $EMBED_CONTAINER_NAME..."
-docker run -d --name $EMBED_CONTAINER_NAME --gpus all -p $EMBED_PORT:80 -v $volume:/data --pull always ghcr.io/huggingface/text-embeddings-inference:1.5 --model-id $model --auto-truncate
+#docker run -d --name $EMBED_CONTAINER_NAME --gpus all -p $EMBED_PORT:80 -v $volume:/data --pull always $image --model-id $model --auto-truncate
+docker run -d --name $EMBED_CONTAINER_NAME -p $EMBED_PORT:80 -v $volume:/data --pull always $image --model-id $model --auto-truncate
 
 
 # usage: (return a 1024 length list of numbers for each input)

@@ -4,30 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/wellitonscheer/ticket-helper/internal/milvus"
 	"github.com/wellitonscheer/ticket-helper/internal/service"
 )
 
 func SuggestReply(search *string) (string, error) {
-	ticketService, err := milvus.NewTicketService()
-	if err != nil {
-		return "", fmt.Errorf("failed create ticket service: %s", err.Error())
-	}
-
-	tickets, err := ticketService.VectorSearch(search)
-	if err != nil {
-		return "", fmt.Errorf("failed to search ticket: %s", err.Error())
-	}
-
 	allTicketsContent := ""
-	for i, ticket := range tickets {
-		if i == 0 {
-			allTicketsContent = ticket.TicketContent
-			continue
-		}
-
-		allTicketsContent += fmt.Sprintf(" - %s", ticket.TicketContent)
-	}
 
 	systemRole := `
 		Você é um assistente de suporte técnico que responde tickets. Gere respostas ao novo ticket usando somente as informações disponíveis no contexto (mensagens anteriores). 
