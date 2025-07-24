@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecervi"
-	types "github.com/wellitonscheer/ticket-helper/internal/types/handlers"
+	"github.com/wellitonscheer/ticket-helper/internal/types"
 	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
 

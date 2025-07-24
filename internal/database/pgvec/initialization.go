@@ -53,7 +53,7 @@ func InitiatePGVec(appCtx appContext.AppContext) {
 
 	fmt.Println("\nPGVector migrations applied\n")
 
-	//InsertTickets(appCtx)
+	InsertTickets(appCtx)
 }
 
 func InsertTickets(appCtx appContext.AppContext) {
@@ -100,6 +100,8 @@ func InsertTickets(appCtx appContext.AppContext) {
 			Log(logFile, fmt.Sprintf("ERROR: failed to strip body (ticketId=%d, ordem=%d, body=%s)", entry.TicketId, entry.Ordem, entry.Body))
 			continue
 		}
+
+		stripedBody = strings.Trim(stripedBody, " ")
 
 		embedInputs := types.Inputs{
 			Inputs: []string{stripedBody},
