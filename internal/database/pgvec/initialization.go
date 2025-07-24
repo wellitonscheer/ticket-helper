@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -132,6 +134,19 @@ func InsertTickets(appCtx appContext.AppContext) {
 
 		Log(logFile, fmt.Sprintf("INFO: ticket inserted (ticketId=%d, ticketOrdem=%d)", ticket.TicketId, ticket.Ordem))
 	}
+}
+
+func RemovePastEmailsFromEntry(texto string) string {
+	padrao := `(?i)(De:|Em (seg|ter|qua|qui|sex|sáb|dom)\.?,? \d{1,2} de .+?escreveu:|---------- Forwarded message ---------|----- Original message -----)`
+
+	re := regexp.MustCompile(padrao)
+	indices := re.FindStringIndex(texto)
+
+	if indices != nil {
+		return strings.TrimSpace(texto[:indices[0]])
+	}
+
+	return strings.TrimSpace(texto)
 }
 
 func OpenLogFile(path string) *os.File {
