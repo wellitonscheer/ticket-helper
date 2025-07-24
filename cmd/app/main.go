@@ -82,9 +82,11 @@ func main() {
 	auth := r.Group("/")
 	auth.Use(middleware.AuthMiddleware(appContext))
 	{
+		ticketHandlers := handlers.NewTicketHandlers(appContext)
+
 		auth.GET("/", handlers.Index)
 		auth.GET("/user/:name", handlers.UserNew)
-		auth.POST("/tickets/search", handlers.TicketVectorSearch)
+		auth.POST("/tickets/search", ticketHandlers.TicketVectorSearch)
 
 		auth.GET("/kys", func(c *gin.Context) {
 			log.Fatal("Good bye ;-;")

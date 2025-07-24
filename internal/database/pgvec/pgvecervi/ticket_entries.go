@@ -22,7 +22,7 @@ type TicketEntriesService struct {
 	AppCtx appContext.AppContext
 }
 
-func NewPGTicketServices(appCtx appContext.AppContext) TicketEntriesService {
+func NewTicketEntriesService(appCtx appContext.AppContext) TicketEntriesService {
 	return TicketEntriesService{
 		Conn:   appCtx.PGVec,
 		AppCtx: appCtx,

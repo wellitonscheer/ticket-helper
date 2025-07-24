@@ -51,7 +51,7 @@ func InitiatePGVec(appCtx appContext.AppContext) {
 
 	fmt.Println("\nPGVector migrations applied\n")
 
-	InsertTickets(appCtx)
+	//InsertTickets(appCtx)
 }
 
 func InsertTickets(appCtx appContext.AppContext) {
@@ -73,7 +73,7 @@ func InsertTickets(appCtx appContext.AppContext) {
 
 	strip := bluemonday.StrictPolicy()
 
-	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
+	ticketServi := pgvecervi.NewTicketEntriesService(appCtx)
 
 	for _, entry := range ticketEntries.Data {
 		if entry.Body == "" {
