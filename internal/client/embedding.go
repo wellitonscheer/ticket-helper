@@ -11,8 +11,8 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
-func GetTextEmbeddings(appCtx appContext.AppContext, inputs *types.Inputs) (*types.Embeddings, error) {
-	var embeddings types.Embeddings
+func GetTextEmbeddings(appCtx appContext.AppContext, inputs *types.ClientEmbeddingInputs) (*types.ClientEmbeddings, error) {
+	var embeddings types.ClientEmbeddings
 
 	if len(inputs.Inputs) == 0 {
 		return &embeddings, fmt.Errorf("client embeddings inputs cannot be empty (inputs=%+v)", inputs)

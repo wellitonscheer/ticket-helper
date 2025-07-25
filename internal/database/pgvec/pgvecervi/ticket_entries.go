@@ -84,7 +84,7 @@ func (tik TicketEntriesService) SearchSimilarByEmbed(embed []float32) ([]pgvecod
 }
 
 func (tik TicketEntriesService) SearchSimilarByText(text string) ([]pgvecodel.TicketEntry, error) {
-	embedInputs := types.Inputs{
+	embedInputs := types.ClientEmbeddingInputs{
 		Inputs: []string{text},
 	}
 	embeddings, err := client.GetTextEmbeddings(tik.AppCtx, &embedInputs)

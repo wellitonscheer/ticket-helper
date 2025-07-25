@@ -99,7 +99,7 @@ func InsertTickets(appCtx appContext.AppContext) {
 			continue
 		}
 
-		embedInputs := types.Inputs{
+		embedInputs := types.ClientEmbeddingInputs{
 			Inputs: []string{cleanBody},
 		}
 
