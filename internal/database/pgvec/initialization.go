@@ -5,17 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
-	"strings"
 	"time"
 
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pgvector/pgvector-go"
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecervi"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
+	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
 
 const (
@@ -73,7 +71,7 @@ func InsertTickets(appCtx appContext.AppContext) {
 	logFile := OpenLogFile(logFilePath)
 	defer logFile.Close()
 
-	strip := bluemonday.StrictPolicy()
+	entryCleaner := utils.NewEntryCleaner()
 
 	ticketServi := pgvecervi.NewTicketEntriesService(appCtx)
 
@@ -95,16 +93,14 @@ func InsertTickets(appCtx appContext.AppContext) {
 			continue
 		}
 
-		stripedBody := strip.Sanitize(entry.Body)
-		if stripedBody == "" {
-			Log(logFile, fmt.Sprintf("ERROR: failed to strip body (ticketId=%d, ordem=%d, body=%s)", entry.TicketId, entry.Ordem, entry.Body))
+		cleanBody := entryCleaner.Clean(entry.Body)
+		if cleanBody == "" {
+			Log(logFile, fmt.Sprintf("INFO: empty cleaned body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
 			continue
 		}
 
-		stripedBody = strings.Trim(stripedBody, " ")
-
 		embedInputs := types.Inputs{
-			Inputs: []string{stripedBody},
+			Inputs: []string{cleanBody},
 		}
 
 		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
@@ -124,7 +120,7 @@ func InsertTickets(appCtx appContext.AppContext) {
 			Subject:   entry.Subject,
 			Ordem:     entry.Ordem,
 			Poster:    entry.Poster,
-			Body:      stripedBody,
+			Body:      cleanBody,
 			Embedding: pgvector.NewVector((*embeddings)[0]),
 		}
 
@@ -136,19 +132,6 @@ func InsertTickets(appCtx appContext.AppContext) {
 
 		Log(logFile, fmt.Sprintf("INFO: ticket inserted (ticketId=%d, ticketOrdem=%d)", ticket.TicketId, ticket.Ordem))
 	}
-}
-
-func RemovePastEmailsFromEntry(texto string) string {
-	padrao := `(?i)(De:|Em (seg|ter|qua|qui|sex|sáb|dom)\.?,? \d{1,2} de .+?escreveu:|---------- Forwarded message ---------|----- Original message -----)`
-
-	re := regexp.MustCompile(padrao)
-	indices := re.FindStringIndex(texto)
-
-	if indices != nil {
-		return strings.TrimSpace(texto[:indices[0]])
-	}
-
-	return strings.TrimSpace(texto)
 }
 
 func OpenLogFile(path string) *os.File {
