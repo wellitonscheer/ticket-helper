@@ -1,7 +1,7 @@
 package types
 
-type Inputs struct {
+type ClientEmbeddingInputs struct {
 	Inputs []string `json:"inputs"`
 }
 
-type Embeddings = [][]float32
+type ClientEmbeddings = [][]float32

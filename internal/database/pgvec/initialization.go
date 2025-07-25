@@ -7,13 +7,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pgvector/pgvector-go"
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecervi"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
+	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	logFilePath     string = "./internal/database/pgvec/logs.txt"
 )
 
-func InitiatePGVec(appCtx appContext.AppContext) {
+func RunMigrations(appCtx appContext.AppContext) {
 	fmt.Println("\nInitiating PGVector migrations...\n")
 
 	migrations, err := os.ReadDir(migrationFolder)
@@ -51,7 +51,7 @@ func InitiatePGVec(appCtx appContext.AppContext) {
 
 	fmt.Println("\nPGVector migrations applied\n")
 
-	InsertTickets(appCtx)
+	// InsertTickets(appCtx)
 }
 
 func InsertTickets(appCtx appContext.AppContext) {
@@ -71,9 +71,9 @@ func InsertTickets(appCtx appContext.AppContext) {
 	logFile := OpenLogFile(logFilePath)
 	defer logFile.Close()
 
-	strip := bluemonday.StrictPolicy()
+	entryCleaner := utils.NewEntryCleaner()
 
-	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
+	ticketServi := pgvecervi.NewTicketEntriesService(appCtx)
 
 	for _, entry := range ticketEntries.Data {
 		if entry.Body == "" {
@@ -93,24 +93,15 @@ func InsertTickets(appCtx appContext.AppContext) {
 			continue
 		}
 
-		stripedBody := strip.Sanitize(entry.Body)
-		if stripedBody == "" {
-			Log(logFile, fmt.Sprintf("ERROR: failed to strip body (ticketId=%d, ordem=%d, body=%s)", entry.TicketId, entry.Ordem, entry.Body))
+		cleanBody := entryCleaner.Clean(entry.Body)
+		if cleanBody == "" {
+			Log(logFile, fmt.Sprintf("INFO: empty cleaned body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
 			continue
 		}
 
-		embedInputs := types.Inputs{
-			Inputs: []string{stripedBody},
-		}
-
-		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
+		embedding, err := client.GetSingleTextEmbedding(appCtx, cleanBody)
 		if err != nil {
-			Log(logFile, fmt.Sprintf("ERROR: failed to get entry body embeddings (embedInputs=%+v): %v", embedInputs, err))
-			continue
-		}
-
-		if len(*embeddings) == 0 {
-			Log(logFile, fmt.Sprintf("ERROR: embedding has returned no value (embeddings=%+v, embedInputs=%+v)", embeddings, embedInputs))
+			Log(logFile, fmt.Sprintf("ERROR: failed to get entry body embedding (cleanBody=%+v): %v", cleanBody, err))
 			continue
 		}
 
@@ -120,8 +111,8 @@ func InsertTickets(appCtx appContext.AppContext) {
 			Subject:   entry.Subject,
 			Ordem:     entry.Ordem,
 			Poster:    entry.Poster,
-			Body:      stripedBody,
-			Embedding: pgvector.NewVector((*embeddings)[0]),
+			Body:      cleanBody,
+			Embedding: pgvector.NewVector(embedding),
 		}
 
 		err = ticketServi.Create(ticket)

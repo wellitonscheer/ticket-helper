@@ -8,13 +8,5 @@ data_source/authorized_emails.json
 data_source/tickets.json
 internal/database/pgvec/logs.txt
 
-# dados pra treinamento, são muito grande
-ai/data/inputs/*
-ai/data/outputs/*
-ai/get_data/data/*
-
-# ia treinada, mais de giga cada pasta
-ai/output*
-
-# milvus db docker volume
+# pgvector db docker volume
 volumes/*

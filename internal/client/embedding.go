@@ -11,8 +11,8 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
-func GetTextEmbeddings(appCtx appContext.AppContext, inputs *types.Inputs) (*types.Embeddings, error) {
-	var embeddings types.Embeddings
+func GetTextEmbeddings(appCtx appContext.AppContext, inputs *types.ClientEmbeddingInputs) (*types.ClientEmbeddings, error) {
+	var embeddings types.ClientEmbeddings
 
 	if len(inputs.Inputs) == 0 {
 		return &embeddings, fmt.Errorf("client embeddings inputs cannot be empty (inputs=%+v)", inputs)
@@ -48,4 +48,30 @@ func GetTextEmbeddings(appCtx appContext.AppContext, inputs *types.Inputs) (*typ
 	}
 
 	return &embeddings, nil
+}
+
+func GetSingleTextEmbedding(appCtx appContext.AppContext, text string) ([]float32, error) {
+	if text == "" {
+		return []float32{}, fmt.Errorf("text to embed cannot be empty")
+	}
+
+	embedInput := types.ClientEmbeddingInputs{
+		Inputs: []string{text},
+	}
+
+	embeddings, err := GetTextEmbeddings(appCtx, &embedInput)
+	if err != nil {
+		return []float32{}, fmt.Errorf("GetTextEmbeddings failed to get text embedding (text='%s'): %v", text, err)
+	}
+
+	if len(*embeddings) == 0 {
+		return []float32{}, fmt.Errorf("GetTextEmbeddings client has returned a empty list of vectors (text='%s')", text)
+	}
+
+	firstEmbedding := (*embeddings)[0]
+	if len(firstEmbedding) == 0 {
+		return []float32{}, fmt.Errorf("GetTextEmbeddings has returned a empty list for the given text (text='%s')", text)
+	}
+
+	return firstEmbedding, nil
 }
