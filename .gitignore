@@ -7,8 +7,6 @@ data_source/black_tickets_content.json
 data_source/authorized_emails.json
 data_source/tickets.json
 internal/database/pgvec/logs.txt
-data_source/blacks.txt
-data_source/cut.txt
 
 # pgvector db docker volume
 volumes/*

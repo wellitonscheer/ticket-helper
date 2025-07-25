@@ -22,7 +22,7 @@ const (
 	logFilePath     string = "./internal/database/pgvec/logs.txt"
 )
 
-func InitiatePGVec(appCtx appContext.AppContext) {
+func RunMigrations(appCtx appContext.AppContext) {
 	fmt.Println("\nInitiating PGVector migrations...\n")
 
 	migrations, err := os.ReadDir(migrationFolder)

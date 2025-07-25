@@ -40,7 +40,7 @@ func main() {
 	sqliteMigrations := sqlite.NewSqliteMigrations(appContext)
 	sqliteMigrations.RunMigrations()
 
-	pgvec.InitiatePGVec(appContext)
+	pgvec.RunMigrations(appContext)
 
 	r := gin.Default()
 

@@ -61,12 +61,17 @@ func (cl EntryCleaner) IsUselessEntry(entry string) bool {
 		"A solicitação foi encerrada",
 		"Task closed",
 		"fechado automaticamente pela ausência de retorno",
+		"Hello suporte@setrem.com.br",
 	}
 
 	for _, useless := range uselessEntries {
 		if strings.Contains(entry, useless) {
 			return true
 		}
+	}
+
+	if strings.Contains(entry, "Olá, SETREM") && strings.Contains(entry, "A disciplina") && strings.Contains(entry, "foi aprovada") {
+		return true
 	}
 
 	return false
