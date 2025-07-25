@@ -9,7 +9,6 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
-	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
 type BlackEntriesService struct {
@@ -42,22 +41,14 @@ func (blk BlackEntriesService) Create(entry pgvecodel.BlackEntry) error {
 }
 
 func (blk BlackEntriesService) CreateFromContent(content string) error {
-	embedInput := types.ClientEmbeddingInputs{
-		Inputs: []string{content},
-	}
-	embeddings, err := client.GetTextEmbeddings(blk.AppCtx, &embedInput)
+	embedding, err := client.GetSingleTextEmbedding(blk.AppCtx, content)
 	if err != nil {
 		return fmt.Errorf("failed to get content embeddings (content=%s): %v", content, err)
 	}
 
-	firstEmbedding := (*embeddings)[0]
-	if len(firstEmbedding) == 0 {
-		return fmt.Errorf("no embedding returned to the content provided (embedInput=%+v, embeddings=%+v)", embedInput, embeddings)
-	}
-
 	entryToCreate := pgvecodel.BlackEntry{
 		Content:   content,
-		Embedding: pgvector.NewVector(firstEmbedding),
+		Embedding: pgvector.NewVector(embedding),
 	}
 
 	return blk.Create(entryToCreate)
