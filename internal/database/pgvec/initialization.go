@@ -99,18 +99,9 @@ func InsertTickets(appCtx appContext.AppContext) {
 			continue
 		}
 
-		embedInputs := types.ClientEmbeddingInputs{
-			Inputs: []string{cleanBody},
-		}
-
-		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
+		embedding, err := client.GetSingleTextEmbedding(appCtx, cleanBody)
 		if err != nil {
-			Log(logFile, fmt.Sprintf("ERROR: failed to get entry body embeddings (embedInputs=%+v): %v", embedInputs, err))
-			continue
-		}
-
-		if len(*embeddings) == 0 {
-			Log(logFile, fmt.Sprintf("ERROR: embedding has returned no value (embeddings=%+v, embedInputs=%+v)", embeddings, embedInputs))
+			Log(logFile, fmt.Sprintf("ERROR: failed to get entry body embedding (cleanBody=%+v): %v", cleanBody, err))
 			continue
 		}
 
@@ -121,7 +112,7 @@ func InsertTickets(appCtx appContext.AppContext) {
 			Ordem:     entry.Ordem,
 			Poster:    entry.Poster,
 			Body:      cleanBody,
-			Embedding: pgvector.NewVector((*embeddings)[0]),
+			Embedding: pgvector.NewVector(embedding),
 		}
 
 		err = ticketServi.Create(ticket)
