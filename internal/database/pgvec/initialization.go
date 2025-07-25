@@ -51,7 +51,7 @@ func RunMigrations(appCtx appContext.AppContext) {
 
 	fmt.Println("\nPGVector migrations applied\n")
 
-	InsertTickets(appCtx)
+	// InsertTickets(appCtx)
 }
 
 func InsertTickets(appCtx appContext.AppContext) {
