@@ -76,7 +76,7 @@ func (tik TicketEntriesService) SearchSimilarByEmbed(embed []float32) ([]pgvecod
 
 	err := pgxscan.Select(context.Background(), tik.Conn, &entries, "SELECT * FROM ticket_entries ORDER BY embedding <=> $1 LIMIT $2", pgvector.NewVector(embed), limitSimilaritySearch)
 	if err != nil {
-		return entries, fmt.Errorf("failed ticket entries by embed (embed=%v): %v", embed, err)
+		return entries, fmt.Errorf("failed to search ticket entries by embed (embed=%v): %v", embed, err)
 	}
 
 	return entries, nil

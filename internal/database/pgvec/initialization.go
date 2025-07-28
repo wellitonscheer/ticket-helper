@@ -104,8 +104,9 @@ func InsertData(appCtx appContext.AppContext) {
 		panic(err)
 	}
 
-	for _, entry := range ticketEntries.Data {
-		insertData.InsertTicketEntries(entry)
+	for range ticketEntries.Data {
+		//for _, entry = range ticketEntries.Data {
+		// insertData.InsertTicketEntries(entry)
 	}
 }
 
