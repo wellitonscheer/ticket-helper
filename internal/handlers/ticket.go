@@ -53,7 +53,7 @@ func (tik TicketHandlers) TicketVectorSearch(c *gin.Context) {
 		}
 
 		for _, entry := range tickerEntries {
-			results = append(results, types.TicketVectorSearchResponse{TicketId: entry.TicketId, Score: float32(0.42222222)})
+			results = append(results, types.TicketVectorSearchResponse{TicketId: entry.TicketId, Score: entry.Distance})
 		}
 	} else if searchType == suggestReply {
 

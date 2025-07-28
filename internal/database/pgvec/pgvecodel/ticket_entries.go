@@ -17,3 +17,19 @@ func (t *TicketEntry) IsEmpty() bool {
 	// id is autoincrement and begins in 1, will never be 0
 	return t.Id == 0
 }
+
+type TicketEntrySimilaritySearch struct {
+	Id       int
+	Type     string
+	TicketId int
+	Subject  string
+	Ordem    int
+	Poster   string
+	Body     string
+	Distance float32
+}
+
+func (t *TicketEntrySimilaritySearch) IsEmpty() bool {
+	// id is autoincrement and begins in 1, will never be 0
+	return t.Id == 0
+}
