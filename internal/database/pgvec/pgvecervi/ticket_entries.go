@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	limitSimilaritySearch int = 10
+	entryLimitSimilaritySearch int = 10
 )
 
 type TicketEntriesService struct {
@@ -71,10 +71,11 @@ func (tik TicketEntriesService) GetUniqueByTicketIdAndOrdem(ticketId int, ordem 
 	return entries[0], nil
 }
 
-func (tik TicketEntriesService) SearchSimilarByEmbed(embed []float32) ([]pgvecodel.TicketEntry, error) {
-	var entries []pgvecodel.TicketEntry
+func (tik TicketEntriesService) SearchSimilarByEmbed(embed []float32) ([]pgvecodel.TicketEntrySimilaritySearch, error) {
+	var entries []pgvecodel.TicketEntrySimilaritySearch
 
-	err := pgxscan.Select(context.Background(), tik.Conn, &entries, "SELECT * FROM ticket_entries ORDER BY embedding <=> $1 LIMIT $2", pgvector.NewVector(embed), limitSimilaritySearch)
+	sqlStm := "SELECT id, type, ticket_id, subject, ordem, poster, body, 1 - (embedding <=> $1) AS distance FROM ticket_entries ORDER BY distance DESC LIMIT $2"
+	err := pgxscan.Select(context.Background(), tik.Conn, &entries, sqlStm, pgvector.NewVector(embed), entryLimitSimilaritySearch)
 	if err != nil {
 		return entries, fmt.Errorf("failed to search ticket entries by embed (embed=%v): %v", embed, err)
 	}
@@ -82,10 +83,10 @@ func (tik TicketEntriesService) SearchSimilarByEmbed(embed []float32) ([]pgvecod
 	return entries, nil
 }
 
-func (tik TicketEntriesService) SearchSimilarByText(text string) ([]pgvecodel.TicketEntry, error) {
+func (tik TicketEntriesService) SearchSimilarByText(text string) ([]pgvecodel.TicketEntrySimilaritySearch, error) {
 	embedding, err := client.GetSingleTextEmbedding(tik.AppCtx, text)
 	if err != nil {
-		return []pgvecodel.TicketEntry{}, fmt.Errorf("failed to get text embeddings for the similarity search (text=%s): %v", text, err)
+		return []pgvecodel.TicketEntrySimilaritySearch{}, fmt.Errorf("failed to get text embeddings for the similarity search (text=%s): %v", text, err)
 	}
 
 	return tik.SearchSimilarByEmbed(embedding)
