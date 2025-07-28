@@ -10,7 +10,6 @@ import (
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
-	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
 const (
@@ -22,7 +21,7 @@ type TicketEntriesService struct {
 	AppCtx appContext.AppContext
 }
 
-func NewPGTicketServices(appCtx appContext.AppContext) TicketEntriesService {
+func NewTicketEntriesService(appCtx appContext.AppContext) TicketEntriesService {
 	return TicketEntriesService{
 		Conn:   appCtx.PGVec,
 		AppCtx: appCtx,
@@ -84,19 +83,10 @@ func (tik TicketEntriesService) SearchSimilarByEmbed(embed []float32) ([]pgvecod
 }
 
 func (tik TicketEntriesService) SearchSimilarByText(text string) ([]pgvecodel.TicketEntry, error) {
-	embedInputs := types.Inputs{
-		Inputs: []string{text},
-	}
-	embeddings, err := client.GetTextEmbeddings(tik.AppCtx, &embedInputs)
+	embedding, err := client.GetSingleTextEmbedding(tik.AppCtx, text)
 	if err != nil {
 		return []pgvecodel.TicketEntry{}, fmt.Errorf("failed to get text embeddings for the similarity search (text=%s): %v", text, err)
 	}
 
-	firstEmbedding := (*embeddings)[0]
-
-	if len(firstEmbedding) == 0 {
-		return []pgvecodel.TicketEntry{}, fmt.Errorf("getTextEmbeddings returned no embedding (embeddings=%+v)", embeddings)
-	}
-
-	return tik.SearchSimilarByEmbed(firstEmbedding)
+	return tik.SearchSimilarByEmbed(embedding)
 }

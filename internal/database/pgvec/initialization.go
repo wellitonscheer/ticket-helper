@@ -7,13 +7,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pgvector/pgvector-go"
 	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecervi"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
+	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
 
 const (
@@ -22,7 +22,27 @@ const (
 	logFilePath     string = "./internal/database/pgvec/logs.txt"
 )
 
-func InitiatePGVec(appCtx appContext.AppContext) {
+type InsertPGVectorData struct {
+	AppCtx     appContext.AppContext
+	Cleaner    utils.EntryCleaner
+	Logger     func(text string)
+	EntryServi pgvecervi.TicketEntriesService
+}
+
+func NewInsertPGVectorData(appCtx appContext.AppContext, log func(text string)) *InsertPGVectorData {
+	entryCleaner := utils.NewEntryCleaner()
+
+	entryServi := pgvecervi.NewTicketEntriesService(appCtx)
+
+	return &InsertPGVectorData{
+		AppCtx:     appCtx,
+		Cleaner:    entryCleaner,
+		Logger:     log,
+		EntryServi: entryServi,
+	}
+}
+
+func RunMigrations(appCtx appContext.AppContext) {
 	fmt.Println("\nInitiating PGVector migrations...\n")
 
 	migrations, err := os.ReadDir(migrationFolder)
@@ -51,10 +71,10 @@ func InitiatePGVec(appCtx appContext.AppContext) {
 
 	fmt.Println("\nPGVector migrations applied\n")
 
-	InsertTickets(appCtx)
+	InsertData(appCtx)
 }
 
-func InsertTickets(appCtx appContext.AppContext) {
+func InsertData(appCtx appContext.AppContext) {
 	tickets, err := os.ReadFile(expTicketsPath)
 	if err != nil {
 		fmt.Printf("error to read exported tickets file (path=%s)\n", expTicketsPath)
@@ -71,67 +91,63 @@ func InsertTickets(appCtx appContext.AppContext) {
 	logFile := OpenLogFile(logFilePath)
 	defer logFile.Close()
 
-	strip := bluemonday.StrictPolicy()
+	log := func(text string) {
+		Log(logFile, text)
+	}
 
-	ticketServi := pgvecervi.NewPGTicketServices(appCtx)
+	insertData := NewInsertPGVectorData(appCtx, log)
 
 	for _, entry := range ticketEntries.Data {
-		if entry.Body == "" {
-			Log(logFile, fmt.Sprintf("INFO: empty entry body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
-			continue
-		}
-
-		storedTicket, err := ticketServi.GetUniqueByTicketIdAndOrdem(entry.TicketId, entry.Ordem)
-		if err != nil {
-			Log(logFile, fmt.Sprintf("ERROR: failed to get ticket entry by id and ordem (ticketId=%d, ordem=%d): %v", entry.TicketId, entry.Ordem, err))
-			continue
-		}
-
-		if !storedTicket.IsEmpty() {
-			// already in database
-			Log(logFile, fmt.Sprintf("INFO: ticket already in database (storedEntryId=%d, storedTicketID=%d, storedTicketOrdem=%d)", storedTicket.Id, storedTicket.TicketId, storedTicket.Ordem))
-			continue
-		}
-
-		stripedBody := strip.Sanitize(entry.Body)
-		if stripedBody == "" {
-			Log(logFile, fmt.Sprintf("ERROR: failed to strip body (ticketId=%d, ordem=%d, body=%s)", entry.TicketId, entry.Ordem, entry.Body))
-			continue
-		}
-
-		embedInputs := types.Inputs{
-			Inputs: []string{stripedBody},
-		}
-
-		embeddings, err := client.GetTextEmbeddings(appCtx, &embedInputs)
-		if err != nil {
-			Log(logFile, fmt.Sprintf("ERROR: failed to get entry body embeddings (embedInputs=%+v): %v", embedInputs, err))
-			continue
-		}
-
-		if len(*embeddings) == 0 {
-			Log(logFile, fmt.Sprintf("ERROR: embedding has returned no value (embeddings=%+v, embedInputs=%+v)", embeddings, embedInputs))
-			continue
-		}
-
-		ticket := pgvecodel.TicketEntry{
-			Type:      entry.Type,
-			TicketId:  entry.TicketId,
-			Subject:   entry.Subject,
-			Ordem:     entry.Ordem,
-			Poster:    entry.Poster,
-			Body:      stripedBody,
-			Embedding: pgvector.NewVector((*embeddings)[0]),
-		}
-
-		err = ticketServi.Create(ticket)
-		if err != nil {
-			Log(logFile, fmt.Sprintf("ERROR: failed to create new ticket (ticket=%+v): %v", ticket, err))
-			continue
-		}
-
-		Log(logFile, fmt.Sprintf("INFO: ticket inserted (ticketId=%d, ticketOrdem=%d)", ticket.TicketId, ticket.Ordem))
+		insertData.InsertTicketEntries(entry)
 	}
+}
+
+func (d *InsertPGVectorData) InsertTicketEntries(entry types.TicketEntry) {
+	if entry.Body == "" {
+		d.Logger(fmt.Sprintf("INFOE: empty entry body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
+		return
+	}
+
+	storedTicket, err := d.EntryServi.GetUniqueByTicketIdAndOrdem(entry.TicketId, entry.Ordem)
+	if err != nil {
+		d.Logger(fmt.Sprintf("ERRORE: failed to get ticket entry by id and ordem (ticketId=%d, ordem=%d): %v", entry.TicketId, entry.Ordem, err))
+		return
+	}
+
+	if !storedTicket.IsEmpty() {
+		d.Logger(fmt.Sprintf("INFOE: ticket already in database (storedEntryId=%d, storedTicketID=%d, storedTicketOrdem=%d)", storedTicket.Id, storedTicket.TicketId, storedTicket.Ordem))
+		return
+	}
+
+	cleanBody := d.Cleaner.Clean(entry.Body)
+	if cleanBody == "" {
+		d.Logger(fmt.Sprintf("INFOE: empty cleaned body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
+		return
+	}
+
+	embedding, err := client.GetSingleTextEmbedding(d.AppCtx, cleanBody)
+	if err != nil {
+		d.Logger(fmt.Sprintf("ERRORE: failed to get entry body embedding (cleanBody=%+v): %v", cleanBody, err))
+		return
+	}
+
+	ticket := pgvecodel.TicketEntry{
+		Type:      entry.Type,
+		TicketId:  entry.TicketId,
+		Subject:   entry.Subject,
+		Ordem:     entry.Ordem,
+		Poster:    entry.Poster,
+		Body:      cleanBody,
+		Embedding: pgvector.NewVector(embedding),
+	}
+
+	err = d.EntryServi.Create(ticket)
+	if err != nil {
+		d.Logger(fmt.Sprintf("ERRORE: failed to create new ticket (ticket=%+v): %v", ticket, err))
+		return
+	}
+
+	d.Logger(fmt.Sprintf("INFOE: ticket inserted (ticketId=%d, ticketOrdem=%d)", ticket.TicketId, ticket.Ordem))
 }
 
 func OpenLogFile(path string) *os.File {
