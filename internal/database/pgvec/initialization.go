@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	migrationFolder string = "./internal/database/pgvec/migrations"
-	expTicketsPath  string = "./data_source/tickets.json"
-	logFilePath     string = "./internal/database/pgvec/logs.txt"
+	migrationFolder  string = "./internal/database/pgvec/migrations"
+	expTicketsPath   string = "./data_source/tickets.json"
+	logFilePath      string = "./internal/database/pgvec/logs.txt"
+	blackEntriesPath string = "./data_source/black_entries_content.example.json"
 )
 
 type InsertPGVectorData struct {
@@ -27,6 +28,7 @@ type InsertPGVectorData struct {
 	Cleaner    utils.EntryCleaner
 	Logger     func(text string)
 	EntryServi pgvecervi.TicketEntriesService
+	BlackServi pgvecervi.BlackEntriesService
 }
 
 func NewInsertPGVectorData(appCtx appContext.AppContext, log func(text string)) *InsertPGVectorData {
@@ -34,11 +36,14 @@ func NewInsertPGVectorData(appCtx appContext.AppContext, log func(text string)) 
 
 	entryServi := pgvecervi.NewTicketEntriesService(appCtx)
 
+	blackServi := pgvecervi.NewBlackEntriesService(appCtx)
+
 	return &InsertPGVectorData{
 		AppCtx:     appCtx,
 		Cleaner:    entryCleaner,
 		Logger:     log,
 		EntryServi: entryServi,
+		BlackServi: blackServi,
 	}
 }
 
@@ -75,6 +80,17 @@ func RunMigrations(appCtx appContext.AppContext) {
 }
 
 func InsertData(appCtx appContext.AppContext) {
+	logFile := OpenLogFile(logFilePath)
+	defer logFile.Close()
+
+	log := func(text string) {
+		Log(logFile, text)
+	}
+
+	insertData := NewInsertPGVectorData(appCtx, log)
+
+	insertData.InsertBlackEntries()
+
 	tickets, err := os.ReadFile(expTicketsPath)
 	if err != nil {
 		fmt.Printf("error to read exported tickets file (path=%s)\n", expTicketsPath)
@@ -88,17 +104,39 @@ func InsertData(appCtx appContext.AppContext) {
 		panic(err)
 	}
 
-	logFile := OpenLogFile(logFilePath)
-	defer logFile.Close()
-
-	log := func(text string) {
-		Log(logFile, text)
-	}
-
-	insertData := NewInsertPGVectorData(appCtx, log)
-
 	for _, entry := range ticketEntries.Data {
 		insertData.InsertTicketEntries(entry)
+	}
+}
+
+func (d *InsertPGVectorData) InsertBlackEntries() {
+	blackContent, err := os.ReadFile(blackEntriesPath)
+	if err != nil {
+		fmt.Printf("failed to read black entries file path\n")
+		panic(err)
+	}
+
+	var blackEntries types.BlackEntriesContent
+	err = json.Unmarshal(blackContent, &blackEntries)
+	if err != nil {
+		fmt.Printf("failed to unmarshal black entries\n")
+		panic(err)
+	}
+
+	for _, entry := range blackEntries {
+		storedEntry := d.BlackServi.GetByEntryId(entry.Id)
+		if !storedEntry.IsEmpty() {
+			d.Logger(fmt.Sprintf("INFOB: black entry already in database (entryID=%d)", entry.Id))
+			continue
+		}
+
+		err = d.BlackServi.CreateFromContent(entry.Content)
+		if err != nil {
+			d.Logger(fmt.Sprintf("ERRORB: failed to create new black entry with CreateFromContent (entry=%+v): %v", entry, err))
+			continue
+		}
+
+		d.Logger(fmt.Sprintf("INFOB: black entry inserted (entryID=%d)", entry.Id))
 	}
 }
 

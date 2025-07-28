@@ -53,3 +53,12 @@ func (blk BlackEntriesService) CreateFromContent(content string) error {
 
 	return blk.Create(entryToCreate)
 }
+
+func (blk BlackEntriesService) GetByEntryId(entryId int) pgvecodel.BlackEntry {
+	var entry pgvecodel.BlackEntry
+
+	sqlStm := "SELECT * FROM black_entries WHERE id = $1"
+	blk.Conn.QueryRow(context.Background(), sqlStm, entryId).Scan(&entry.Id, &entry.Content, &entry.Embedding)
+
+	return entry
+}
