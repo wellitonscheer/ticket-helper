@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	entryLimitSimilaritySearch int = 10
+	entryLimitSimilaritySearch int = 20
 )
 
 type TicketEntriesService struct {
