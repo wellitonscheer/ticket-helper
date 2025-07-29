@@ -3,6 +3,7 @@ ticket-helper.db
 
 tmp
 
+data_source/black_entries_content.json
 data_source/black_tickets_content.json
 data_source/authorized_emails.json
 data_source/tickets.json

@@ -20,7 +20,7 @@ const (
 	migrationFolder  string = "./internal/database/pgvec/migrations"
 	expTicketsPath   string = "./data_source/tickets.json"
 	logFilePath      string = "./internal/database/pgvec/logs.txt"
-	blackEntriesPath string = "./data_source/black_entries_content.example.json"
+	blackEntriesPath string = "./data_source/black_entries_content.json"
 )
 
 type InsertPGVectorData struct {
@@ -104,9 +104,9 @@ func InsertData(appCtx appContext.AppContext) {
 		panic(err)
 	}
 
-	for range ticketEntries.Data {
-		//for _, entry = range ticketEntries.Data {
-		// insertData.InsertTicketEntries(entry)
+	// for range ticketEntries.Data {
+	for _, entry := range ticketEntries.Data {
+		insertData.InsertTicketEntries(entry)
 	}
 }
 
@@ -168,6 +168,16 @@ func (d *InsertPGVectorData) InsertTicketEntries(entry types.TicketEntry) {
 	if err != nil {
 		d.Logger(fmt.Sprintf("ERRORE: failed to get entry body embedding (cleanBody=%+v): %v", cleanBody, err))
 		return
+	}
+
+	similarBlackEntries, err := d.BlackServi.SearchSimilarByEmbed(embedding)
+	if err != nil {
+		d.Logger(fmt.Sprintf("ERRORE: failed to get similar black entries to the ticket entry (entryTicketID=%d, entryTicketOrdem=%d): %v", entry.TicketId, entry.Ordem, err))
+	} else if len(similarBlackEntries) > 0 {
+		if similarBlackEntries[0].Distance > float32(0.8) {
+			d.Logger(fmt.Sprintf("INFOE: entry is similar to a black entry (entryTicketID=%d, entryTicketOrdem=%d, blackEntryId=%d)", entry.TicketId, entry.Ordem, similarBlackEntries[0].Id))
+			return
+		}
 	}
 
 	ticket := pgvecodel.TicketEntry{
