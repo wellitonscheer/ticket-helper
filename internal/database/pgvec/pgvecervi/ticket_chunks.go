@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	chunkLimitSimilaritySearch = 20
+	chunkLimitSimilaritySearch = 200
 )
 
 type TicketChunksService struct {
