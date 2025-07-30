@@ -37,25 +37,12 @@ func (tik TicketHandlers) TicketVectorSearch(c *gin.Context) {
 		return
 	}
 
-	var results []types.TicketVectorSearchResponse
+	results := []types.TicketVectorSearchResponse{}
 
 	if searchType == entireTicketContent {
 
 	} else if searchType == chunk {
-		ticketChunkService := pgvecervi.NewTicketChunksService(tik.AppCtx)
-
-		tickerChunks, err := ticketChunkService.SearchSimilarByText(searchInput)
-		if err != nil {
-			utils.HandleError(c, utils.HandleErrorInput{
-				Code:    http.StatusInternalServerError,
-				LogMsg:  fmt.Sprintf("failed to search similar ticket chunks by text (searchInput=%s): %v", searchInput, err),
-				UserMsg: "failed to search chunks, try again later",
-			})
-		}
-
-		for _, chunk := range tickerChunks {
-			results = append(results, types.TicketVectorSearchResponse{TicketId: chunk.TicketId, Score: chunk.Distance})
-		}
+		tik.SearchChunk(c, &results, searchInput)
 	} else if searchType == singleMessages {
 		ticketEntriesSer := pgvecervi.NewTicketEntriesService(tik.AppCtx)
 
@@ -79,4 +66,21 @@ func (tik TicketHandlers) TicketVectorSearch(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "results", results)
+}
+
+func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVectorSearchResponse, searchInput string) {
+	ticketChunkService := pgvecervi.NewTicketChunksService(tik.AppCtx)
+
+	tickerChunks, err := ticketChunkService.SearchSimilarByText(searchInput)
+	if err != nil {
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("failed to search similar ticket chunks by text (searchInput=%s): %v", searchInput, err),
+			UserMsg: "failed to search chunks, try again later",
+		})
+	}
+
+	for _, chunk := range tickerChunks {
+		*results = append(*results, types.TicketVectorSearchResponse{TicketId: chunk.TicketId, Score: chunk.Distance})
+	}
 }
