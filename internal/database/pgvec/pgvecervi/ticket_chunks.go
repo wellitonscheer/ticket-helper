@@ -50,9 +50,9 @@ func (chu TicketChunksService) Get(filters types.TicketChunkGetInputFilters) ([]
 	for i, col := range filters.Columns {
 		if i == 0 {
 			sqlStm = sqlStm + fmt.Sprintf(" %s = $%d", col, i+1)
+		} else {
+			sqlStm = sqlStm + fmt.Sprintf(" AND %s = $%d", col, i+1)
 		}
-
-		sqlStm = sqlStm + fmt.Sprintf(" AND %s = $%d", col, i+1)
 	}
 
 	err := pgxscan.Select(context.Background(), chu.Conn, &ticketChunks, sqlStm, filters.Values...)
