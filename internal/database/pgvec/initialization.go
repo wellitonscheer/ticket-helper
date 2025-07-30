@@ -29,6 +29,7 @@ type InsertPGVectorData struct {
 	Logger     func(text string)
 	EntryServi pgvecervi.TicketEntriesService
 	BlackServi pgvecervi.BlackEntriesService
+	ChunkServi pgvecervi.TicketChunksService
 }
 
 func NewInsertPGVectorData(appCtx appContext.AppContext, log func(text string)) *InsertPGVectorData {
@@ -38,12 +39,15 @@ func NewInsertPGVectorData(appCtx appContext.AppContext, log func(text string)) 
 
 	blackServi := pgvecervi.NewBlackEntriesService(appCtx)
 
+	chunkServi := pgvecervi.NewTicketChunksService(appCtx)
+
 	return &InsertPGVectorData{
 		AppCtx:     appCtx,
 		Cleaner:    entryCleaner,
 		Logger:     log,
 		EntryServi: entryServi,
 		BlackServi: blackServi,
+		ChunkServi: chunkServi,
 	}
 }
 
@@ -107,6 +111,66 @@ func InsertData(appCtx appContext.AppContext) {
 	// for range ticketEntries.Data {
 	for _, entry := range ticketEntries.Data {
 		insertData.InsertTicketEntries(entry)
+		insertData.InsertTicketChunks(entry)
+	}
+}
+
+func (d *InsertPGVectorData) InsertTicketChunks(entry types.TicketEntry) {
+	if entry.Body == "" {
+		d.Logger(fmt.Sprintf("INFOC: empty entry body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
+		return
+	}
+
+	cleanBody := d.Cleaner.Clean(entry.Body)
+	if cleanBody == "" {
+		d.Logger(fmt.Sprintf("INFOC: empty cleaned body (entryTicketID=%d, entryTicketOrdem=%d)", entry.TicketId, entry.Ordem))
+		return
+	}
+
+	chunkTextInput := types.ChunkTextInput{
+		Text: cleanBody,
+	}
+	chunks := utils.ChunkText(chunkTextInput)
+
+	for _, chunk := range chunks {
+		chunkEmbedding, err := client.GetSingleTextEmbedding(d.AppCtx, chunk)
+		if err != nil {
+			d.Logger(fmt.Sprintf("ERRORC: failed to get chunk embedding (chunk=%+v): %v", chunk, err))
+			continue
+		}
+
+		getChunksFilters := types.TicketChunkGetInputFilters{
+			Columns: []string{"ticket_id", "ordem", "chunk"},
+			Values:  []any{entry.TicketId, entry.Ordem, chunk},
+		}
+		storedChunk, err := d.ChunkServi.Get(getChunksFilters)
+		if err != nil {
+			d.Logger(fmt.Sprintf("ERRORC: failed to get ticket chunk (ticketId=%d, ordem=%d): %v", entry.TicketId, entry.Ordem, err))
+			continue
+		}
+
+		if len(storedChunk) > 0 && !storedChunk[0].IsEmpty() {
+			d.Logger(fmt.Sprintf("INFOC: ticket chunk already in database (storedChunkId=%d, storedChunkID=%d, storedChunkOrdem=%d)", storedChunk[0].Id, storedChunk[0].TicketId, storedChunk[0].Ordem))
+			continue
+		}
+
+		ticketChunk := pgvecodel.TicketChunk{
+			Type:      entry.Type,
+			TicketId:  entry.TicketId,
+			Subject:   entry.Subject,
+			Ordem:     entry.Ordem,
+			Poster:    entry.Poster,
+			Chunk:     chunk,
+			Embedding: pgvector.NewVector(chunkEmbedding),
+		}
+
+		err = d.ChunkServi.Create(ticketChunk)
+		if err != nil {
+			d.Logger(fmt.Sprintf("ERRORC: failed to create new chunk (ticketChunk=%+v): %v", ticketChunk, err))
+			continue
+		}
+
+		d.Logger(fmt.Sprintf("INFOC: ticket chunk inserted (ticketId=%d, ticketOrdem=%d, chunk=%s)", entry.TicketId, entry.Ordem, chunk))
 	}
 }
 
