@@ -23,8 +23,9 @@
 
             <div class="button-group">
                 <select id="search-type" name="search-type">
-                    <option value="entire">Conteúdo Ticket</option>
                     <option value="message">Única Mensagem</option>
+                    <option value="chunk">Chuk</option>
+                    <option value="entire">Conteúdo Ticket</option>
                     <option value="reply">Sugerir Resposta</option>
                 </select>
                 <button id="button-pesquisar" class="button-pesquisar" hx-post="/tickets/search" hx-trigger="click"
