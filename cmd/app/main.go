@@ -89,7 +89,11 @@ func main() {
 		auth.POST("/tickets/search", ticketHandlers.TicketVectorSearch)
 
 		auth.GET("/kys", func(c *gin.Context) {
-			log.Fatal("Good bye ;-;")
+			go func() {
+				time.Sleep(2 * time.Second)
+				log.Fatal()
+			}()
+			c.String(http.StatusOK, "Good bye ;-;")
 		})
 	}
 
