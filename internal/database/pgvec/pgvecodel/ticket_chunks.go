@@ -32,3 +32,19 @@ func IsValidTicketChunkColumn(col string) bool {
 
 	return allowedColumns[col]
 }
+
+type TicketChunkSimilaritySearch struct {
+	Id       int
+	Type     string
+	TicketId int
+	Subject  string
+	Ordem    int
+	Poster   string
+	Chunk    string
+	Distance float32
+}
+
+func (t *TicketChunkSimilaritySearch) IsEmpty() bool {
+	// id is autoincrement and begins in 1, will never be 0
+	return t.Id == 0
+}

@@ -6,9 +6,15 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pgvector/pgvector-go"
+	"github.com/wellitonscheer/ticket-helper/internal/client"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecodel"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
+)
+
+const (
+	chunkLimitSimilaritySearch = 10
 )
 
 type TicketChunksService struct {
@@ -65,4 +71,25 @@ func (chu TicketChunksService) Get(filters types.TicketChunkGetInputFilters) ([]
 	}
 
 	return ticketChunks, nil
+}
+
+func (chu TicketChunksService) SearchSimilarByEmbed(embed []float32) ([]pgvecodel.TicketChunkSimilaritySearch, error) {
+	var chunks []pgvecodel.TicketChunkSimilaritySearch
+
+	sqlStm := "SELECT id, type, ticket_id, subject, ordem, poster, chunk, 1 - (embedding <=> $1) AS distance FROM ticket_chunks ORDER BY distance DESC LIMIT $2"
+	err := pgxscan.Select(context.Background(), chu.Conn, &chunks, sqlStm, pgvector.NewVector(embed), chunkLimitSimilaritySearch)
+	if err != nil {
+		return chunks, fmt.Errorf("failed to search ticket chunks by embed (embed=%v): %v", embed, err)
+	}
+
+	return chunks, nil
+}
+
+func (chu TicketChunksService) SearchSimilarByText(text string) ([]pgvecodel.TicketChunkSimilaritySearch, error) {
+	embedding, err := client.GetSingleTextEmbedding(chu.AppCtx, text)
+	if err != nil {
+		return []pgvecodel.TicketChunkSimilaritySearch{}, fmt.Errorf("failed to get chunk text embeddings for the similarity search (text=%s): %v", text, err)
+	}
+
+	return chu.SearchSimilarByEmbed(embedding)
 }

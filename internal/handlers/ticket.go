@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	entireTicketContent = "entire"
 	singleMessages      = "message"
+	chunk               = "chunk"
+	entireTicketContent = "entire"
 	suggestReply        = "reply"
 )
 
@@ -40,6 +41,21 @@ func (tik TicketHandlers) TicketVectorSearch(c *gin.Context) {
 
 	if searchType == entireTicketContent {
 
+	} else if searchType == chunk {
+		ticketChunkService := pgvecervi.NewTicketChunksService(tik.AppCtx)
+
+		tickerChunks, err := ticketChunkService.SearchSimilarByText(searchInput)
+		if err != nil {
+			utils.HandleError(c, utils.HandleErrorInput{
+				Code:    http.StatusInternalServerError,
+				LogMsg:  fmt.Sprintf("failed to search similar ticket chunks by text (searchInput=%s): %v", searchInput, err),
+				UserMsg: "failed to search chunks, try again later",
+			})
+		}
+
+		for _, chunk := range tickerChunks {
+			results = append(results, types.TicketVectorSearchResponse{TicketId: chunk.TicketId, Score: chunk.Distance})
+		}
 	} else if searchType == singleMessages {
 		ticketEntriesSer := pgvecervi.NewTicketEntriesService(tik.AppCtx)
 
