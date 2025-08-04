@@ -134,6 +134,7 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 		}
 	}
 
+	// score = max(similarity) + 0.05 * count(similarities > 0.73)
 	var occs []types.TicketVectorSearchResponse
 	for ticketId, occ := range mostOcc {
 		var biggerDistance float32
