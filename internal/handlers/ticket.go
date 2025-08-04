@@ -122,15 +122,10 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 		}
 
 		for _, found := range ticketChunks {
-			if found.TicketId == 8661 {
-				fmt.Printf("\nchunk: %s", searchInput)
-				fmt.Printf("bb\n%+v\n", found)
-			}
 			if occ, ok := mostOcc[found.TicketId]; ok {
 				mostOcc[found.TicketId] = TicketOccurrence{
 					Distances: append(occ.Distances, found.Distance),
 				}
-
 			} else {
 				mostOcc[found.TicketId] = TicketOccurrence{
 					Distances: []float32{found.Distance},
@@ -160,6 +155,10 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 	sort.Slice(occs, func(i, j int) bool {
 		return occs[i].Score > occs[j].Score
 	})
+
+	if len(occs) > 20 {
+		occs = occs[:20]
+	}
 
 	*results = append(*results, occs...)
 }
