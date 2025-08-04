@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
@@ -71,9 +70,7 @@ func (tik TicketHandlers) TicketVectorSearch(c *gin.Context) {
 }
 
 type TicketOccurrence struct {
-	TicketId int
-	Score    float32
-	Distance float32
+	Distances []float32
 }
 
 type TicketsMostOccurrences map[int]TicketOccurrence
@@ -83,11 +80,11 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 
 	mostOcc := TicketsMostOccurrences{}
 
-	if len(searchInput) > 20 {
+	if len(searchInput) > 40 {
 		searchChunks := utils.ChunkText(types.ChunkTextInput{
 			Text:        searchInput,
-			ChunkSize:   20,
-			OverlapSize: 7,
+			ChunkSize:   40,
+			OverlapSize: 10,
 		})
 
 		for _, searchChunk := range searchChunks {
@@ -102,50 +99,14 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 			}
 
 			for _, found := range seachedChunks {
-				if mostOcc[found.TicketId] == (TicketOccurrence{}) {
+				if occ, ok := mostOcc[found.TicketId]; ok {
 					mostOcc[found.TicketId] = TicketOccurrence{
-						TicketId: found.TicketId,
-						Score:    ((1 + found.Distance) * 2),
-						Distance: found.Distance,
+						Distances: append(occ.Distances, found.Distance),
 					}
+
 				} else {
 					mostOcc[found.TicketId] = TicketOccurrence{
-						TicketId: found.TicketId,
-						Score:    mostOcc[found.TicketId].Score + ((1 + found.Distance) * 2),
-						Distance: mostOcc[found.TicketId].Distance,
-					}
-				}
-			}
-		}
-
-		searchInputWords := strings.Split(searchInput, " ")
-		for _, searchWord := range searchInputWords {
-			if len(searchWord) < 5 {
-				continue
-			}
-
-			seachedWord, err := ticketChunkService.SearchSimilarByText(searchWord)
-			if err != nil {
-				utils.HandleError(c, utils.HandleErrorInput{
-					Code:    http.StatusInternalServerError,
-					LogMsg:  fmt.Sprintf("failed to search similar searchInput word (searchWord=%s): %v", searchWord, err),
-					UserMsg: "failed to search chunks, try again later",
-				})
-				return
-			}
-
-			for _, found := range seachedWord {
-				if mostOcc[found.TicketId] == (TicketOccurrence{}) {
-					mostOcc[found.TicketId] = TicketOccurrence{
-						TicketId: found.TicketId,
-						Score:    ((1 + found.Distance) / 2),
-						Distance: found.Distance,
-					}
-				} else {
-					mostOcc[found.TicketId] = TicketOccurrence{
-						TicketId: found.TicketId,
-						Score:    mostOcc[found.TicketId].Score + ((1 + found.Distance) / 2),
-						Distance: mostOcc[found.TicketId].Distance,
+						Distances: []float32{found.Distance},
 					}
 				}
 			}
@@ -161,32 +122,44 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 		}
 
 		for _, found := range ticketChunks {
-			if mostOcc[found.TicketId] == (TicketOccurrence{}) {
+			if found.TicketId == 8661 {
+				fmt.Printf("\nchunk: %s", searchInput)
+				fmt.Printf("bb\n%+v\n", found)
+			}
+			if occ, ok := mostOcc[found.TicketId]; ok {
 				mostOcc[found.TicketId] = TicketOccurrence{
-					TicketId: found.TicketId,
-					Score:    1,
-					Distance: found.Distance,
+					Distances: append(occ.Distances, found.Distance),
 				}
+
 			} else {
 				mostOcc[found.TicketId] = TicketOccurrence{
-					TicketId: found.TicketId,
-					Score:    mostOcc[found.TicketId].Score + 1,
-					Distance: mostOcc[found.TicketId].Distance,
+					Distances: []float32{found.Distance},
 				}
 			}
 		}
 	}
 
-	var occs []TicketOccurrence
-	for _, occ := range mostOcc {
-		occs = append(occs, occ)
+	var occs []types.TicketVectorSearchResponse
+	for ticketId, occ := range mostOcc {
+		var biggerDistance float32
+		var occMod float32
+
+		for _, distance := range occ.Distances {
+			if distance > float32(0.73) {
+				occMod = occMod + float32(0.05)
+			}
+			if distance > biggerDistance {
+				biggerDistance = distance
+			}
+		}
+
+		score := biggerDistance + occMod
+		occs = append(occs, types.TicketVectorSearchResponse{TicketId: ticketId, Score: score})
 	}
 
 	sort.Slice(occs, func(i, j int) bool {
 		return occs[i].Score > occs[j].Score
 	})
 
-	for _, chunk := range occs {
-		*results = append(*results, types.TicketVectorSearchResponse{TicketId: chunk.TicketId, Score: chunk.Distance})
-	}
+	*results = append(*results, occs...)
 }
