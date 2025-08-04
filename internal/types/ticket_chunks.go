@@ -8,6 +8,10 @@ type TicketChunkGetInputFilters struct {
 }
 
 func (fil TicketChunkGetInputFilters) IsValid() bool {
+	if len(fil.Columns) == 0 {
+		return false
+	}
+
 	if len(fil.Columns) != len(fil.Values) {
 		return false
 	}
