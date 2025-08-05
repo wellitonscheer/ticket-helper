@@ -3,6 +3,7 @@ package pgvecervi
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	chunkLimitSimilaritySearch = 200
+	chunkLimitSimilaritySearch = 50
 )
 
 type TicketChunksService struct {
@@ -92,4 +93,76 @@ func (chu TicketChunksService) SearchSimilarByText(text string) ([]pgvecodel.Tic
 	}
 
 	return chu.SearchSimilarByEmbed(embedding)
+}
+
+type TicketOccurrence struct {
+	Distances     []float32
+	TopDistance   float32
+	OccMod        float32
+	ComputedScore float32
+}
+
+type TicketsMostOccurrences map[int]TicketOccurrence
+
+// score = max(similarity) + 0.05 * count(similarities > 0.73)
+func (chu TicketChunksService) SearchComputeScore(input types.SearchComputeScoreInput) ([]pgvecodel.TicketChunkSimilaritySearch, error) {
+	if input == (types.SearchComputeScoreInput{}) {
+		return []pgvecodel.TicketChunkSimilaritySearch{}, fmt.Errorf("empty SearchComputeScore input")
+	}
+
+	if input.Limit == 0 {
+		input.Limit = 20
+	}
+	if input.RelevantScore == 0 {
+		input.RelevantScore = float32(0.73)
+	}
+
+	mostOcc := TicketsMostOccurrences{}
+	mapTickets := make(map[int]pgvecodel.TicketChunkSimilaritySearch)
+
+	seachedChunks, err := chu.SearchSimilarByText(input.Search)
+	if err != nil {
+		return []pgvecodel.TicketChunkSimilaritySearch{}, fmt.Errorf("failed SearchSimilarByText in SearchComputeScore (input=%s): %v", input.Search, err)
+	}
+
+	for _, found := range seachedChunks {
+		mapTickets[found.TicketId] = found
+
+		lastOcc := mostOcc[found.TicketId]
+
+		currentOcc := TicketOccurrence{
+			TopDistance: lastOcc.TopDistance,
+			OccMod:      lastOcc.OccMod,
+		}
+
+		if found.Distance > lastOcc.TopDistance {
+			currentOcc.TopDistance = found.Distance
+		}
+		if found.Distance > input.RelevantScore {
+			currentOcc.OccMod = lastOcc.OccMod + float32(0.05)
+		}
+
+		currentOcc.Distances = append(lastOcc.Distances, found.Distance)
+
+		currentOcc.ComputedScore = currentOcc.TopDistance + currentOcc.OccMod
+
+		mostOcc[found.TicketId] = currentOcc
+	}
+
+	calculadedChunks := []pgvecodel.TicketChunkSimilaritySearch{}
+	for ticketId, occ := range mostOcc {
+		calculated := mapTickets[ticketId]
+		calculated.Distance = occ.ComputedScore
+		calculadedChunks = append(calculadedChunks, calculated)
+	}
+
+	sort.Slice(calculadedChunks, func(i, j int) bool {
+		return calculadedChunks[i].Distance > calculadedChunks[j].Distance
+	})
+
+	if len(calculadedChunks) > input.Limit {
+		calculadedChunks = calculadedChunks[:input.Limit]
+	}
+
+	return calculadedChunks, nil
 }
