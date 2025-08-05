@@ -24,3 +24,9 @@ func (fil TicketChunkGetInputFilters) IsValid() bool {
 
 	return true
 }
+
+type SearchComputeScoreInput struct {
+	Search        string
+	Limit         int
+	RelevantScore float32
+}
