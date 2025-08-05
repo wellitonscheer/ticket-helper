@@ -38,7 +38,7 @@ func ChunkText(input types.ChunkTextInput) []string {
 		}
 
 		if iEnd >= textLen {
-			chunk := input.Text[iStart+1 : textLen]
+			chunk := input.Text[iStart:textLen]
 			chunks = append(chunks, chunk)
 			// fmt.Printf("chunk: '%+s'\n", chunk)
 			break

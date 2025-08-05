@@ -80,7 +80,6 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 		})
 
 		for _, input := range inputChunks {
-			fmt.Println(input)
 			seachedChunks, err := ticketChunkService.SearchComputeScore(types.SearchComputeScoreInput{
 				Search: input,
 			})
