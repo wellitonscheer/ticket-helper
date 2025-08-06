@@ -38,39 +38,54 @@ func (tik TicketHandlers) TicketVectorSearch(c *gin.Context) {
 		return
 	}
 
-	results := []types.TicketVectorSearchResponse{}
-
-	if searchType == entireTicketContent {
-
-	} else if searchType == chunk {
-		tik.SearchChunk(c, &results, searchInput)
-	} else if searchType == singleMessages {
-		ticketEntriesSer := pgvecervi.NewTicketEntriesService(tik.AppCtx)
-
-		tickerEntries, err := ticketEntriesSer.SearchSimilarByText(searchInput)
-		if err != nil {
-			utils.HandleError(c, utils.HandleErrorInput{
-				Code:    http.StatusInternalServerError,
-				LogMsg:  fmt.Sprintf("failed to search similar ticket entries by text (searchInput=%s): %v", searchInput, err),
-				UserMsg: "failed to search tickets, try again later",
-			})
-		}
-
-		for _, entry := range tickerEntries {
-			results = append(results, types.TicketVectorSearchResponse{TicketId: entry.TicketId, Score: entry.Distance})
-		}
-	} else if searchType == suggestReply {
-
-	} else {
+	switch searchType {
+	case entireTicketContent:
+		tik.SearchTicketBody(c, searchInput)
+		return
+	case singleMessages:
+		tik.SearchSingleMessage(c, searchInput)
+		return
+	case chunk:
+		tik.SearchChunk(c, searchInput)
+		return
+	case suggestReply:
+		tik.SuggestReply(c, searchInput)
+		return
+	default:
 		c.String(http.StatusBadRequest, "invalid search type")
 		return
+	}
+}
+
+func (tik TicketHandlers) SuggestReply(c *gin.Context, searchInput string) {
+	c.HTML(http.StatusOK, "suggeted-reply", gin.H{"Reply": "hi, wanna be friends?"})
+}
+
+func (tik TicketHandlers) SearchSingleMessage(c *gin.Context, searchInput string) {
+	ticketEntriesSer := pgvecervi.NewTicketEntriesService(tik.AppCtx)
+
+	results := []types.TicketVectorSearchResponse{}
+
+	tickerEntries, err := ticketEntriesSer.SearchSimilarByText(searchInput)
+	if err != nil {
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("failed to search similar ticket entries by text (searchInput=%s): %v", searchInput, err),
+			UserMsg: "failed to search tickets, try again later",
+		})
+	}
+
+	for _, entry := range tickerEntries {
+		results = append(results, types.TicketVectorSearchResponse{TicketId: entry.TicketId, Score: entry.Distance})
 	}
 
 	c.HTML(http.StatusOK, "results", results)
 }
 
-func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVectorSearchResponse, searchInput string) {
+func (tik TicketHandlers) SearchChunk(c *gin.Context, searchInput string) {
 	ticketChunkService := pgvecervi.NewTicketChunksService(tik.AppCtx)
+
+	results := []types.TicketVectorSearchResponse{}
 
 	if len(searchInput) > 40 {
 		inputChunks := utils.ChunkText(types.ChunkTextInput{
@@ -93,7 +108,7 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 			}
 
 			for _, searchedChunk := range seachedChunks {
-				*results = append(*results, types.TicketVectorSearchResponse{
+				results = append(results, types.TicketVectorSearchResponse{
 					TicketId: searchedChunk.TicketId,
 					Score:    searchedChunk.Distance,
 				})
@@ -112,14 +127,20 @@ func (tik TicketHandlers) SearchChunk(c *gin.Context, results *[]types.TicketVec
 		}
 
 		for _, searchedChunk := range seachedChunks {
-			*results = append(*results, types.TicketVectorSearchResponse{
+			results = append(results, types.TicketVectorSearchResponse{
 				TicketId: searchedChunk.TicketId,
 				Score:    searchedChunk.Distance,
 			})
 		}
 	}
 
-	sort.Slice((*results), func(i, j int) bool {
-		return (*results)[i].Score > (*results)[j].Score
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
 	})
+
+	c.HTML(http.StatusOK, "results", results)
+}
+
+func (tik TicketHandlers) SearchTicketBody(c *gin.Context, searchInput string) {
+	c.HTML(http.StatusOK, "suggeted-reply", gin.H{"Reply": "nuh uh"})
 }
