@@ -1,10 +1,10 @@
 package llm
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/wellitonscheer/ticket-helper/internal/service"
+	"github.com/wellitonscheer/ticket-helper/internal/client"
+	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
 func SuggestReply(search *string) (string, error) {
@@ -46,12 +46,12 @@ func SuggestReply(search *string) (string, error) {
 		</NovoTicketRecebido>
 	`, allTicketsContent, *search)
 
-	modelResponse, err := service.LmstudioModel(&service.Messages{
-		service.Message{
+	modelResponse, err := client.LmstudioModel(&types.LMSMessages{
+		types.LMSRoleMessage{
 			Role:    "system",
 			Content: systemRole,
 		},
-		service.Message{
+		types.LMSRoleMessage{
 			Role:    "user",
 			Content: userRole,
 		},
@@ -61,7 +61,7 @@ func SuggestReply(search *string) (string, error) {
 	}
 
 	if len(modelResponse.Choices) == 0 {
-		return "", errors.New("model didnt return any suggestion")
+		return "", fmt.Errorf("model didnt return any suggestion")
 	}
 
 	return modelResponse.Choices[0].Message.Content, nil
