@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	appContext "github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec/pgvecervi"
+	"github.com/wellitonscheer/ticket-helper/internal/llm"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
 	"github.com/wellitonscheer/ticket-helper/internal/utils"
 )
@@ -58,7 +59,68 @@ func (tik TicketHandlers) TicketVectorSearch(c *gin.Context) {
 }
 
 func (tik TicketHandlers) SuggestReply(c *gin.Context, searchInput string) {
-	c.HTML(http.StatusOK, "suggeted-reply", gin.H{"Reply": "hi, wanna be friends?"})
+	ticketChunkService := pgvecervi.NewTicketChunksService(tik.AppCtx)
+	ticketEntriesService := pgvecervi.NewTicketEntriesService(tik.AppCtx)
+
+	var context string
+
+	seachedChunks, err := ticketChunkService.SearchComputeScore(types.SearchComputeScoreInput{
+		Search:        searchInput,
+		Limit:         6,
+		RelevantScore: float32(0.8),
+	})
+	if err != nil {
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("in SuggestReply failed to SearchComputeScore by searchInput (searchInput=%s): %v", searchInput, err),
+			UserMsg: "failed to suggest reply, try again later",
+		})
+		return
+	}
+
+	for _, chunk := range seachedChunks {
+		ticketEntries, err := ticketEntriesService.GetByTicketId(chunk.TicketId)
+		if err != nil {
+			utils.HandleError(c, utils.HandleErrorInput{
+				Code:    http.StatusInternalServerError,
+				LogMsg:  fmt.Sprintf("in SuggestReply failed to GetByTicketId by chunk ticket id (TicketId=%d): %v", chunk.TicketId, err),
+				UserMsg: "failed to suggest reply, try again later",
+			})
+			return
+		}
+
+		if len(ticketEntries) == 0 {
+			utils.HandleError(c, utils.HandleErrorInput{
+				Code:    http.StatusInternalServerError,
+				LogMsg:  fmt.Sprintf("in SuggestReply GetByTicketId returned no values (TicketId=%d)", chunk.TicketId),
+				UserMsg: "failed to suggest reply, try again later",
+			})
+			return
+		}
+
+		sort.Slice(ticketEntries, func(i, j int) bool {
+			return ticketEntries[i].Ordem > ticketEntries[j].Ordem
+		})
+
+		context += fmt.Sprintf("%s:\n", ticketEntries[0].Subject)
+		for _, entry := range ticketEntries {
+			context += fmt.Sprintf("%s\n", entry.Body)
+		}
+
+		context += "\n"
+	}
+
+	suggestedReply, err := llm.SuggestReply(&searchInput, &context)
+	if err != nil {
+		utils.HandleError(c, utils.HandleErrorInput{
+			Code:    http.StatusInternalServerError,
+			LogMsg:  fmt.Sprintf("in SuggestReply failed to get reply from llm.SuggestReply (searchInput=%s): %v", searchInput, err),
+			UserMsg: "failed to suggest reply, try again later",
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "suggeted-reply", gin.H{"Reply": suggestedReply})
 }
 
 func (tik TicketHandlers) SearchSingleMessage(c *gin.Context, searchInput string) {
