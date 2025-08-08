@@ -1,23 +1,24 @@
 package llm
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/wellitonscheer/ticket-helper/internal/service"
+	"github.com/wellitonscheer/ticket-helper/internal/client"
+	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
-func SuggestReply(search *string) (string, error) {
-	allTicketsContent := ""
-
+func SuggestReply(appCtx context.AppContext, search, context *string) (string, error) {
 	systemRole := `
 		Você é um assistente de suporte técnico que responde tickets. Gere respostas ao novo ticket usando somente as informações disponíveis no contexto (mensagens anteriores). 
 
 		Regras obrigatórias:
-		1. Use apenas dados presentes no contexto.
+		1. Nunca invente informações. Use apenas os dados presentes no contexto.
 		2. Se o contexto for insuficiente, solicite mais detalhes de forma objetiva ou responda de maneira neutra.
 		3. Mantenha o mesmo tom e estilo dos tickets anteriores.
-		4. Não inclua informações extras nem mencione que está usando o contexto (evite "baseado no contexto...").
+		4. **Não mencione o contexto nem o uso de IA**. Fale como se fosse uma pessoa continuando o atendimento.
+		5. Mensagens anteriores podem estar desatualizadas. **Evite tratar eventos antigos como se ainda estivessem válidos.**
+		6. Use o histórico apenas para entender padrões, responsáveis ou procedimentos, mas não afirme que algo antigo ainda está ocorrendo.
 
 		Formato de entrada:
 		<ContextoDosTicketsAnteriores>
@@ -44,14 +45,19 @@ func SuggestReply(search *string) (string, error) {
 		<NovoTicketRecebido>
 		%s
 		</NovoTicketRecebido>
-	`, allTicketsContent, *search)
+	`, *context, *search)
 
-	modelResponse, err := service.LmstudioModel(&service.Messages{
-		service.Message{
+	fullContextTokens := (len(userRole) + len(systemRole)) / 4
+	if fullContextTokens > appCtx.Config.LLM.LLMContextLengthTokens {
+		return "", fmt.Errorf("failed to get suggestion, to many context tokens")
+	}
+
+	modelResponse, err := client.LmstudioModel(appCtx, &types.LMSMessages{
+		types.LMSRoleMessage{
 			Role:    "system",
 			Content: systemRole,
 		},
-		service.Message{
+		types.LMSRoleMessage{
 			Role:    "user",
 			Content: userRole,
 		},
@@ -61,7 +67,7 @@ func SuggestReply(search *string) (string, error) {
 	}
 
 	if len(modelResponse.Choices) == 0 {
-		return "", errors.New("model didnt return any suggestion")
+		return "", fmt.Errorf("model didnt return any suggestion")
 	}
 
 	return modelResponse.Choices[0].Message.Content, nil

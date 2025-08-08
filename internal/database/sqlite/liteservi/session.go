@@ -21,7 +21,7 @@ func NewSessionService(appContext context.AppContext) SessionService {
 	return SessionService{
 		db:              appContext.Sqlite,
 		appContext:      appContext,
-		sessionLifetime: appContext.Config.Common.SessionLifetimeSec,
+		sessionLifetime: appContext.Config.Common.SessionLifetime,
 	}
 }
 

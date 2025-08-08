@@ -134,7 +134,7 @@ func (l LoginHandlers) LoginWithCode(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("session_token", token, int(l.appContext.Config.Common.SessionLifetimeSec), "/", "", true, true)
+	c.SetCookie("session_token", token, int(l.appContext.Config.Common.SessionLifetime), "/", "", true, true)
 
 	if c.GetHeader("HX-Request") == "true" {
 		c.Header("HX-Redirect", "/")

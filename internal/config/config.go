@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	defAuthEmailsPath         string        = "./data_source/authorized_emails.json"
-	defVerificCodeLifetimeSec time.Duration = time.Second * 60 * 15
-	defSessionLifetimeSec     time.Duration = time.Second * 60 * 60 * 3
+	defAuthEmailsPath      string        = "./data_source/authorized_emails.json"
+	defVerificCodeLifetime time.Duration = time.Second * 60 * 15
+	defSessionLifetime     time.Duration = time.Second * 60 * 60 * 3
 )
 
 type DataConfig struct {
@@ -35,12 +35,12 @@ type EmbedConfig struct {
 }
 
 type CommonConfig struct {
-	MyIp                 string
-	BaseUrl              string
-	AppEnv               string
-	GinPort              string
-	LoginCodeLifetimeSec time.Duration // in seconds
-	SessionLifetimeSec   time.Duration // in seconds
+	MyIp              string
+	BaseUrl           string
+	AppEnv            string
+	GinPort           string
+	LoginCodeLifetime time.Duration // in seconds
+	SessionLifetime   time.Duration // in seconds
 }
 
 type PGVectorConfig struct {
@@ -50,12 +50,22 @@ type PGVectorConfig struct {
 	PostgresPort     string
 }
 
+type LLMConfig struct {
+	LLMPort                string
+	LLMContextLengthTokens int
+	LLMModel               string
+	LLMTemperature         float32
+	LLMMaxTokens           int
+	LLMStream              bool
+}
+
 type Config struct {
 	Common   CommonConfig
 	Embed    EmbedConfig
 	Email    EmailConfig
 	Data     DataConfig
 	PGVector PGVectorConfig
+	LLM      LLMConfig
 }
 
 func NewConfig() Config {
@@ -70,41 +80,42 @@ func NewConfig() Config {
 		Email:    ReadEmailConfig(),
 		Data:     ReadDataConfig(),
 		PGVector: ReadPGVectorConfig(),
+		LLM:      ReadLLMConfig(),
 	}
 }
 
 func ReadCommonConfig() CommonConfig {
-	verificCodeLifetimeSec := defVerificCodeLifetimeSec
+	verificCodeLifetime := defVerificCodeLifetime
 
-	codeLifetimeEnv := os.Getenv("VERIFIC_CODE_LIFETIME_SEC")
+	codeLifetimeEnv := os.Getenv("VERIFIC_CODE_LIFETIME")
 	if codeLifetimeEnv != "" {
 		verificCodeLifetimeInt, err := strconv.Atoi(codeLifetimeEnv)
 		if err != nil {
-			log.Fatal(fmt.Sprintf("failed to convert VERIFIC_CODE_LIFETIME_SEC to int: %v", err))
+			log.Fatalf("failed to convert VERIFIC_CODE_LIFETIME to int: %v", err)
 		}
 
-		verificCodeLifetimeSec = time.Duration(verificCodeLifetimeInt) * time.Second
+		verificCodeLifetime = time.Duration(verificCodeLifetimeInt) * time.Second
 	}
 
-	sessionLifetimeSec := defSessionLifetimeSec
+	sessionLifetime := defSessionLifetime
 
-	sessionLifetimeEnv := os.Getenv("SESSION_LIFETIME_SEC")
+	sessionLifetimeEnv := os.Getenv("SESSION_LIFETIME")
 	if sessionLifetimeEnv != "" {
 		sessionLifetimeInt, err := strconv.Atoi(sessionLifetimeEnv)
 		if err != nil {
-			log.Fatal(fmt.Sprintf("failed to convert SESSION_LIFETIME_SEC to int: %v", err))
+			log.Fatalf("failed to convert SESSION_LIFETIME to int: %v", err)
 		}
 
-		sessionLifetimeSec = time.Duration(sessionLifetimeInt) * time.Second
+		sessionLifetime = time.Duration(sessionLifetimeInt) * time.Second
 	}
 
 	return CommonConfig{
-		MyIp:                 os.Getenv("MY_IP"),
-		BaseUrl:              os.Getenv("BASE_URL"),
-		AppEnv:               os.Getenv("APP_ENV"),
-		GinPort:              os.Getenv("GIN_PORT"),
-		LoginCodeLifetimeSec: verificCodeLifetimeSec,
-		SessionLifetimeSec:   sessionLifetimeSec,
+		MyIp:              os.Getenv("MY_IP"),
+		BaseUrl:           os.Getenv("BASE_URL"),
+		AppEnv:            os.Getenv("APP_ENV"),
+		GinPort:           os.Getenv("GIN_PORT"),
+		LoginCodeLifetime: verificCodeLifetime,
+		SessionLifetime:   sessionLifetime,
 	}
 }
 
@@ -138,10 +149,10 @@ func ReadDataConfig() DataConfig {
 
 	if _, err := os.Stat(authEmailsPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Fatal(fmt.Sprintf("auth emails file do not exists: %v", err))
+			log.Fatalf("auth emails file do not exists: %v", err)
 		}
 
-		log.Fatal(fmt.Sprintf("failed to test if auth emails file exist: %v", err))
+		log.Fatalf("failed to test if auth emails file exist: %v", err)
 	}
 
 	return DataConfig{
@@ -155,6 +166,37 @@ func ReadPGVectorConfig() PGVectorConfig {
 		PostgresDB:       os.Getenv("POSTGRES_DB"),
 		PostgresPassword: os.Getenv("POSTGRES_PASSWORD"),
 		PostgresPort:     os.Getenv("POSTGRES_PORT"),
+	}
+}
+
+func ReadLLMConfig() LLMConfig {
+	contextLengthTokens, err := strconv.Atoi(os.Getenv("LLM_CONTEXT_LENGTH_TOKENS"))
+	if err != nil {
+		log.Fatal(fmt.Errorf("failed to convert llm context length tokens: %w", err))
+	}
+
+	temperature, err := strconv.ParseFloat(os.Getenv("LLM_TEMPERATURE"), 32)
+	if err != nil {
+		log.Fatal(fmt.Errorf("failed to convert llm temperature: %w", err))
+	}
+
+	maxTokens, err := strconv.Atoi(os.Getenv("LLM_MAX_TOKENS"))
+	if err != nil {
+		log.Fatal(fmt.Errorf("failed to convert llm max tokens: %w", err))
+	}
+
+	stream, err := strconv.ParseBool(os.Getenv("LLM_STREAM"))
+	if err != nil {
+		log.Fatal(fmt.Errorf("failed to convert llm stream: %w", err))
+	}
+
+	return LLMConfig{
+		LLMPort:                os.Getenv("LLM_PORT"),
+		LLMContextLengthTokens: contextLengthTokens,
+		LLMModel:               os.Getenv("LLM_MODEL"),
+		LLMTemperature:         float32(temperature),
+		LLMMaxTokens:           maxTokens,
+		LLMStream:              stream,
 	}
 }
 

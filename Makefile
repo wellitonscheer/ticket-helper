@@ -20,8 +20,10 @@ dev: ## run everything it needs to start in dev with hot reload
 	./pgvector.sh
 	./embedding.sh
 	air
+	
+## $(LMSTUDIO_APPIMAGE) --no-sandbox &
 
 ## dev: ## run everything it needs to start in dev with hot reload
-	$(LMSTUDIO_APPIMAGE) --no-sandbox &
+	
 	export CGO_ENABLED=1
 	air
