@@ -8,24 +8,21 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
-const model = "qwen2.5-7b-instruct-1m"
-
-// const model = "deepseek-r1-distill-qwen-7b"
-
-func LmstudioModel(messages *types.LMSMessages) (types.LMSModelOutput, error) {
+func LmstudioModel(appCtx context.AppContext, messages *types.LMSMessages) (types.LMSModelOutput, error) {
 	if messages == nil {
 		return types.LMSModelOutput{}, errors.New("invalid messages")
 	}
 
 	modelInput := types.LMSModelInput{
-		Model:       model,
+		Model:       appCtx.Config.LLM.LLMModel,
 		Messages:    *messages,
-		Temperature: 0.7,
-		MaxTokens:   -1,
-		Stream:      false,
+		Temperature: appCtx.Config.LLM.LLMTemperature,
+		MaxTokens:   appCtx.Config.LLM.LLMMaxTokens,
+		Stream:      appCtx.Config.LLM.LLMStream,
 	}
 
 	var modelOutput types.LMSModelOutput
@@ -35,7 +32,8 @@ func LmstudioModel(messages *types.LMSMessages) (types.LMSModelOutput, error) {
 		return modelOutput, fmt.Errorf("failed to create model request body: %v", err.Error())
 	}
 
-	resp, err := http.Post("http://localhost:1234/v1/chat/completions", "application/json", bytes.NewBuffer(requestBody))
+	llmUrl := fmt.Sprintf("http://%s:%s/v1/chat/completions", appCtx.Config.Common.BaseUrl, appCtx.Config.LLM.LLMPort)
+	resp, err := http.Post(llmUrl, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return modelOutput, fmt.Errorf("error to reach model in lmstudio: %v", err.Error())
 	}

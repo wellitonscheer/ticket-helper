@@ -19,7 +19,7 @@ func NewVerificationCodeService(appContext context.AppContext) VerificationCodeS
 	return VerificationCodeService{
 		db:                  appContext.Sqlite,
 		appContext:          appContext,
-		verificCodeLifetime: appContext.Config.Common.LoginCodeLifetimeSec,
+		verificCodeLifetime: appContext.Config.Common.LoginCodeLifetime,
 	}
 }
 

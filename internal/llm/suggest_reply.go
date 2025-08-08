@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"github.com/wellitonscheer/ticket-helper/internal/client"
+	"github.com/wellitonscheer/ticket-helper/internal/context"
 	"github.com/wellitonscheer/ticket-helper/internal/types"
 )
 
-func SuggestReply(search, context *string) (string, error) {
+func SuggestReply(appCtx context.AppContext, search, context *string) (string, error) {
 	systemRole := `
 		Você é um assistente de suporte técnico que responde tickets. Gere respostas ao novo ticket usando somente as informações disponíveis no contexto (mensagens anteriores). 
 
@@ -47,11 +48,11 @@ func SuggestReply(search, context *string) (string, error) {
 	`, *context, *search)
 
 	fullContextTokens := (len(userRole) + len(systemRole)) / 4
-	if fullContextTokens > 4096 {
+	if fullContextTokens > appCtx.Config.LLM.LLMContextLengthTokens {
 		return "", fmt.Errorf("failed to get suggestion, to many context tokens")
 	}
 
-	modelResponse, err := client.LmstudioModel(&types.LMSMessages{
+	modelResponse, err := client.LmstudioModel(appCtx, &types.LMSMessages{
 		types.LMSRoleMessage{
 			Role:    "system",
 			Content: systemRole,

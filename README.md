@@ -51,8 +51,8 @@ APP_ENV=development
 GIN_PORT=8080
 
 # Authentication
-VERIFIC_CODE_LIFETIME_SEC=900
-SESSION_LIFETIME_SEC=10800
+VERIFIC_CODE_LIFETIME=900
+SESSION_LIFETIME=10800
 AUTH_EMAILS_PATH=./data_source/authorized_emails.json
 
 # Embedding Service
@@ -83,6 +83,7 @@ make setup
 ```
 
 This will:
+
 - Install Air for hot reloading
 - Make shell scripts executable
 - Set up development dependencies
@@ -94,6 +95,7 @@ make dev
 ```
 
 This command will:
+
 - Start PostgreSQL with pgvector extension
 - Launch the embedding service
 - Start the Go application with hot reload
@@ -130,6 +132,7 @@ ticket-helper/
 ### Database Migrations
 
 The application automatically runs database migrations on startup:
+
 - SQLite migrations for application data
 - PostgreSQL migrations for vector storage
 
@@ -149,6 +152,7 @@ The development environment uses [Air](https://github.com/air-verse/air) for hot
 ### Usage
 
 The extension provides browser integration for ticket capture and management. It includes:
+
 - Content script injection
 - Background service worker
 - Popup interface

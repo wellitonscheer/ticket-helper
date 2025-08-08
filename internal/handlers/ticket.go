@@ -110,7 +110,7 @@ func (tik TicketHandlers) SuggestReply(c *gin.Context, searchInput string) {
 		context += "\n"
 	}
 
-	suggestedReply, err := llm.SuggestReply(&searchInput, &context)
+	suggestedReply, err := llm.SuggestReply(tik.AppCtx, &searchInput, &context)
 	if err != nil {
 		utils.HandleError(c, utils.HandleErrorInput{
 			Code:    http.StatusInternalServerError,
