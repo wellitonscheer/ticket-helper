@@ -32,7 +32,7 @@ type InsertPGVectorData struct {
 	ChunkServi pgvecervi.TicketChunksService
 }
 
-func NewInsertPGVectorData(appCtx appContext.AppContext, log func(text string)) *InsertPGVectorData {
+func NewInsertPGVectorData(appCtx appContext.AppContext, logger func(text string)) *InsertPGVectorData {
 	entryCleaner := utils.NewEntryCleaner()
 
 	entryServi := pgvecervi.NewTicketEntriesService(appCtx)
@@ -44,7 +44,7 @@ func NewInsertPGVectorData(appCtx appContext.AppContext, log func(text string)) 
 	return &InsertPGVectorData{
 		AppCtx:     appCtx,
 		Cleaner:    entryCleaner,
-		Logger:     log,
+		Logger:     logger,
 		EntryServi: entryServi,
 		BlackServi: blackServi,
 		ChunkServi: chunkServi,
@@ -84,14 +84,14 @@ func RunMigrations(appCtx appContext.AppContext) {
 }
 
 func InsertData(appCtx appContext.AppContext) {
-	logFile := OpenLogFile(logFilePath)
+	logFile := openLogFile(logFilePath)
 	defer logFile.Close()
 
-	log := func(text string) {
-		Log(logFile, text)
+	logger := func(text string) {
+		log(logFile, text)
 	}
 
-	insertData := NewInsertPGVectorData(appCtx, log)
+	insertData := NewInsertPGVectorData(appCtx, logger)
 
 	insertData.InsertBlackEntries()
 
@@ -263,7 +263,7 @@ func (d *InsertPGVectorData) InsertTicketEntries(entry types.TicketEntry) {
 	d.Logger(fmt.Sprintf("INFOE: ticket inserted (ticketId=%d, ticketOrdem=%d)", ticket.TicketId, ticket.Ordem))
 }
 
-func OpenLogFile(path string) *os.File {
+func openLogFile(path string) *os.File {
 	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Printf("failed to open log file (path=%s)", path)
@@ -273,7 +273,7 @@ func OpenLogFile(path string) *os.File {
 	return logFile
 }
 
-func Log(file *os.File, log string) {
+func log(file *os.File, log string) {
 	info := fmt.Sprintf("%v: %s\n", time.Now(), log)
 
 	_, err := file.Write([]byte(info))
