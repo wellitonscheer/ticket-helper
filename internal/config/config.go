@@ -59,6 +59,14 @@ type LLMConfig struct {
 	LLMStream              bool
 }
 
+type OsTicketConfig struct {
+	Host     string
+	Port     string
+	DB       string
+	User     string
+	Password string
+}
+
 type Config struct {
 	Common   CommonConfig
 	Embed    EmbedConfig
@@ -66,6 +74,7 @@ type Config struct {
 	Data     DataConfig
 	PGVector PGVectorConfig
 	LLM      LLMConfig
+	OsTicket OsTicketConfig
 }
 
 func NewConfig() Config {
@@ -81,6 +90,7 @@ func NewConfig() Config {
 		Data:     ReadDataConfig(),
 		PGVector: ReadPGVectorConfig(),
 		LLM:      ReadLLMConfig(),
+		OsTicket: ReadOsTicketConfig(),
 	}
 }
 
@@ -197,6 +207,16 @@ func ReadLLMConfig() LLMConfig {
 		LLMTemperature:         float32(temperature),
 		LLMMaxTokens:           maxTokens,
 		LLMStream:              stream,
+	}
+}
+
+func ReadOsTicketConfig() OsTicketConfig {
+	return OsTicketConfig{
+		Host:     os.Getenv("OSTICKET_HOST"),
+		Port:     os.Getenv("OSTICKET_PORT"),
+		DB:       os.Getenv("OSTICKET_DB"),
+		User:     os.Getenv("OSTICKET_USER"),
+		Password: os.Getenv("OSTICKET_PASSWORD"),
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wellitonscheer/ticket-helper/internal/config"
 	"github.com/wellitonscheer/ticket-helper/internal/context"
+	"github.com/wellitonscheer/ticket-helper/internal/database/osticket"
 	"github.com/wellitonscheer/ticket-helper/internal/database/pgvec"
 	"github.com/wellitonscheer/ticket-helper/internal/database/sqlite"
 	"github.com/wellitonscheer/ticket-helper/internal/handlers"
@@ -30,6 +31,9 @@ func main() {
 
 	pgVec := pgvec.NewPGVectorConnection(conf.PGVector)
 	defer pgVec.Close()
+
+	osTick := osticket.NewOsTicketConnection(conf.OsTicket)
+	defer osTick.Close()
 
 	appContext := context.AppContext{
 		Config: &conf,
