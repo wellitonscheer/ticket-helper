@@ -34,6 +34,7 @@ func main() {
 
 	osTick := osticket.NewOsTicketConnection(conf.OsTicket)
 	defer osTick.Close()
+	go osticket.StartChecker(osTick)
 
 	appContext := context.AppContext{
 		Config: &conf,

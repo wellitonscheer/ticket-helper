@@ -1,15 +1,15 @@
 package osticket
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/wellitonscheer/ticket-helper/internal/config"
 )
 
-func NewOsTicketConnection(osTickConf config.OsTicketConfig) *sql.DB {
+func NewOsTicketConnection(osTickConf config.OsTicketConfig) *sqlx.DB {
 	fmt.Println("Connecting to OsTicket now.")
 	cfg := mysql.NewConfig()
 	cfg.Addr = fmt.Sprintf("%s:%s", osTickConf.Host, osTickConf.Port)
@@ -17,8 +17,9 @@ func NewOsTicketConnection(osTickConf config.OsTicketConfig) *sql.DB {
 	cfg.User = osTickConf.User
 	cfg.Passwd = osTickConf.Password
 	cfg.Net = "tcp"
+	cfg.ParseTime = true
 
-	db, err := sql.Open("mysql", cfg.FormatDSN())
+	db, err := sqlx.Connect("mysql", cfg.FormatDSN())
 	if err != nil {
 		log.Fatal(err)
 	}
